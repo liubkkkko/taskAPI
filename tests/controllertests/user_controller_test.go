@@ -68,21 +68,25 @@ func TestCreateUser(t *testing.T) {
 	}
 
 	for _, v := range samples {
+		req := httptest.NewRequest(http.MethodPost, "/users", bytes.NewBufferString(v.inputJSON))
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
+		c.Echo().ServeHTTP(rec, req)
 
-		req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(v.inputJSON))
-		if err != nil {
-			t.Errorf("this is the error: %v", err)
-		}
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.CreateUser)
-		handler.ServeHTTP(rr, req)
+		// req, err := http.NewRequest("POST", "/users", bytes.NewBufferString(v.inputJSON))
+		// if err != nil {
+		// 	t.Errorf("this is the error: %v", err)
+		// }
+		// rr := httptest.NewRecorder()
+		// handler := http.HandlerFunc(server.CreateUser)
+		// handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			fmt.Printf("Cannot convert to json: %v", err)
 		}
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 		if v.statusCode == 201 {
 			assert.Equal(t, responseMap["nickname"], v.nickname)
 			assert.Equal(t, responseMap["email"], v.email)
@@ -103,20 +107,26 @@ func TestGetUsers(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	req, err := http.NewRequest("GET", "/users", nil)
-	if err != nil {
-		t.Errorf("this is the error: %v\n", err)
-	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(server.GetUsers)
-	handler.ServeHTTP(rr, req)
+
+	req := httptest.NewRequest(http.MethodGet, "/users", nil)
+	rec := httptest.NewRecorder()
+	c := server.Router.NewContext(req, rec)
+	c.Echo().ServeHTTP(rec, req)
+
+	// req, err := http.NewRequest("GET", "/users", nil)
+	// if err != nil {
+	// 	t.Errorf("this is the error: %v\n", err)
+	// }
+	// rr := httptest.NewRecorder()
+	// handler := http.HandlerFunc(server.GetUsers)
+	// handler.ServeHTTP(rr, req)
 
 	var users []models.User
-	err = json.Unmarshal([]byte(rr.Body.String()), &users)
+	err = json.Unmarshal([]byte(rec.Body.String()), &users)
 	if err != nil {
 		log.Fatalf("Cannot convert to json: %v\n", err)
 	}
-	assert.Equal(t, rr.Code, http.StatusOK)
+	assert.Equal(t, rec.Code, http.StatusOK)
 	assert.Equal(t, len(users), 2)
 }
 
@@ -154,18 +164,21 @@ func TestGetUserByID(t *testing.T) {
 		if err != nil {
 			t.Errorf("This is the error: %v\n", err)
 		}
+
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.GetUser)
-		handler.ServeHTTP(rr, req)
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
+		c.Echo().ServeHTTP(rec, req)
+		// handler := http.HandlerFunc(server.GetUser)
+		// handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			log.Fatalf("Cannot convert to json: %v", err)
 		}
 
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 
 		if v.statusCode == 200 {
 			assert.Equal(t, user.Nickname, responseMap["nickname"])
@@ -306,19 +319,23 @@ func TestUpdateUser(t *testing.T) {
 		}
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.UpdateUser)
-
+		rec := httptest.NewRecorder()
 		req.Header.Set("Authorization", v.tokenGiven)
+		c := server.Router.NewContext(req, rec)
+		c.Echo().ServeHTTP(rec, req)
 
-		handler.ServeHTTP(rr, req)
+		// handler := http.HandlerFunc(server.UpdateUser)
+
+		// req.Header.Set("Authorization", v.tokenGiven)
+
+		// handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			t.Errorf("Cannot convert to json: %v", err)
 		}
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 		if v.statusCode == 200 {
 			assert.Equal(t, responseMap["nickname"], v.updateNickname)
 			assert.Equal(t, responseMap["email"], v.updateEmail)
@@ -406,17 +423,21 @@ func TestDeleteUser(t *testing.T) {
 			t.Errorf("This is the error: %v\n", err)
 		}
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.DeleteUser)
-
+		rec := httptest.NewRecorder()
 		req.Header.Set("Authorization", v.tokenGiven)
+		c := server.Router.NewContext(req, rec)
+		c.Echo().ServeHTTP(rec, req)
 
-		handler.ServeHTTP(rr, req)
-		assert.Equal(t, rr.Code, v.statusCode)
+		// handler := http.HandlerFunc(server.DeleteUser)
+
+		// req.Header.Set("Authorization", v.tokenGiven)
+
+		// handler.ServeHTTP(rr, req)
+		assert.Equal(t, rec.Code, v.statusCode)
 
 		if v.statusCode == 401 && v.errorMessage != "" {
 			responseMap := make(map[string]interface{})
-			err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+			err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 			if err != nil {
 				t.Errorf("Cannot convert to json: %v", err)
 			}

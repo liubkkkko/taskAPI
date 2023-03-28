@@ -8,37 +8,42 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/models"
-	"github.com/liubkkkko/firstAPI/api/responses"
 	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func (server *Server) Login(c echo.Context) {
+func (server *Server) Login(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
-		responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		return
+		return c.JSON(http.StatusUnprocessableEntity, err)
+		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
+		// return echo.NewHTTPError(http.StatusUnprocessableEntity, "Please provide valid credentials")
+
 	}
 	user := models.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		return
+		return c.JSON(http.StatusUnprocessableEntity, err)
+		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
+		// return
 	}
 
 	user.Prepare()
 	err = user.Validate("login")
 	if err != nil {
-		responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		return
+		return c.JSON(http.StatusUnprocessableEntity, err)
+		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
+		// return
 	}
 	token, err := server.SignIn(user.Email, user.Password)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
-		responses.ERROR(c.Response(), http.StatusUnprocessableEntity, formattedError)
-		return
+		return c.JSON(http.StatusUnprocessableEntity, formattedError)
+		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, formattedError)
+		// return
 	}
-	responses.JSON(c.Response(), http.StatusOK, token)
+	// responses.JSON(c.Response(), http.StatusOK, token)
+	return c.JSON(http.StatusOK, token)
 }
 
 func (server *Server) SignIn(email, password string) (string, error) {
