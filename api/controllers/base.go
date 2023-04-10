@@ -6,16 +6,16 @@ import (
 	"net/http"
 
 	"github.com/jinzhu/gorm"
-	"github.com/labstack/echo/v4"
-
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"go.uber.org/zap"
 
 	"github.com/liubkkkko/firstAPI/api/models"
 )
 
 type Server struct {
-	DB *gorm.DB
-	// Router *mux.Router
+	DB     *gorm.DB
 	Router *echo.Echo
 }
 
@@ -32,20 +32,27 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 
 	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
 
-	// server.Router = mux.NewRouter()
 	server.Router = echo.New()
 
+	logger, _ := zap.NewProduction()
+	server.Router.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogURI:    true,
+		LogStatus: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			logger.Info("request",
+				zap.String("URI", v.URI),
+				zap.Int("status", v.Status),
+			)
+
+			return nil
+		},
+	}))
 	server.initializeRoutes()
 }
 
 func (server *Server) Run(addr string) {
-	
 	fmt.Println("Listening to port 8080")
-	if err := server.Router.Start(addr); err != http.ErrServerClosed{
+	if err := server.Router.Start(addr); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
-	// if err := server.Router.Start(addr); err!=http.ErrServerClosed{
-	// 	log.Fatal(err)
-	// }
-	// log.Fatal(http.ListenAndServe(addr, server.Router))
 }

@@ -12,8 +12,7 @@ import (
 func SetMiddlewareJSON(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		c.Response().Header().Set("Content-Type", "application/json")
-		next(c)
-		return nil
+		return next(c)
 	}
 }
 
@@ -22,9 +21,8 @@ func SetMiddlewareAuthentication(next echo.HandlerFunc) echo.HandlerFunc {
 		err := auth.TokenValid(c.Request())
 		if err != nil {
 			responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
-			return nil
+			return err
 		}
-		next(c)
-		return nil
+		return next(c)
 	}
 }
