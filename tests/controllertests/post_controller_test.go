@@ -96,23 +96,26 @@ func TestCreatePost(t *testing.T) {
 		},
 	}
 	for _, v := range samples {
-
-		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.inputJSON))
+		req := httptest.NewRequest(http.MethodPost, "/posts", bytes.NewBufferString(v.inputJSON))
+		// req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.inputJSON))
 		if err != nil {
 			t.Errorf("this is the error: %v\n", err)
 		}
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.CreatePost)
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
+
+		// handler := http.HandlerFunc(server.CreatePost)
 
 		req.Header.Set("Authorization", v.tokenGiven)
-		handler.ServeHTTP(rr, req)
+		c.Echo().ServeHTTP(rec, req)
+		// handler.ServeHTTP(rec, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			fmt.Printf("Cannot convert to json: %v", err)
 		}
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 		if v.statusCode == 201 {
 			assert.Equal(t, responseMap["title"], v.title)
 			assert.Equal(t, responseMap["content"], v.content)
@@ -134,19 +137,21 @@ func TestGetPosts(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	req, err := http.NewRequest("GET", "/posts", nil)
+	req := httptest.NewRequest(http.MethodGet, "/posts", nil)
+	// req, err := http.NewRequest("GET", "/posts", nil)
 	if err != nil {
 		t.Errorf("this is the error: %v\n", err)
 	}
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(server.GetPosts)
-	handler.ServeHTTP(rr, req)
+	rec := httptest.NewRecorder()
+	// handler := http.HandlerFunc(server.GetPosts)
+	c := server.Router.NewContext(req, rec)
+	c.Echo().ServeHTTP(rec, req)
+	// handler.ServeHTTP(rec, req)
 
 	var posts []models.Post
-	err = json.Unmarshal([]byte(rr.Body.String()), &posts)
+	err = json.Unmarshal([]byte(rec.Body.String()), &posts)
 
-	assert.Equal(t, rr.Code, http.StatusOK)
+	assert.Equal(t, rec.Code, http.StatusOK)
 	assert.Equal(t, len(posts), 2)
 }
 func TestGetPostByID(t *testing.T) {
@@ -180,23 +185,23 @@ func TestGetPostByID(t *testing.T) {
 		},
 	}
 	for _, v := range postSample {
-
-		req, err := http.NewRequest("GET", "/posts", nil)
-		if err != nil {
-			t.Errorf("this is the error: %v\n", err)
-		}
-		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.GetPost)
-		handler.ServeHTTP(rr, req)
+		req := httptest.NewRequest(http.MethodPost, "/posts", nil)
+		// if err != nil {
+		// 	t.Errorf("this is the error: %v\n", err)
+		// }
+		// req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
+		c.Echo().ServeHTTP(rec, req)
+		// handler := http.HandlerFunc(server.GetPost)
+		// handler.ServeHTTP(rec, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			log.Fatalf("Cannot convert to json: %v", err)
 		}
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 
 		if v.statusCode == 200 {
 			assert.Equal(t, post.Title, responseMap["title"])
@@ -325,25 +330,31 @@ func TestUpdatePost(t *testing.T) {
 	}
 
 	for _, v := range samples {
-
-		req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.updateJSON))
-		if err != nil {
-			t.Errorf("this is the error: %v\n", err)
-		}
+		req := httptest.NewRequest(http.MethodPost, "/posts", nil)
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.UpdatePost)
-
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
 		req.Header.Set("Authorization", v.tokenGiven)
+		c.Echo().ServeHTTP(rec, req)
 
-		handler.ServeHTTP(rr, req)
+		// req, err := http.NewRequest("POST", "/posts", bytes.NewBufferString(v.updateJSON))
+		// if err != nil {
+		// 	t.Errorf("this is the error: %v\n", err)
+		// }
+		// req = mux.SetURLVars(req, map[string]string{"id": v.id})
+		// rr := httptest.NewRecorder()
+		// handler := http.HandlerFunc(server.UpdatePost)
+
+		// req.Header.Set("Authorization", v.tokenGiven)
+
+		// handler.ServeHTTP(rr, req)
 
 		responseMap := make(map[string]interface{})
-		err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+		err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 		if err != nil {
 			t.Errorf("Cannot convert to json: %v", err)
 		}
-		assert.Equal(t, rr.Code, v.statusCode)
+		assert.Equal(t, rec.Code, v.statusCode)
 		if v.statusCode == 200 {
 			assert.Equal(t, responseMap["title"], v.title)
 			assert.Equal(t, responseMap["content"], v.content)
@@ -436,23 +447,29 @@ func TestDeletePost(t *testing.T) {
 		},
 	}
 	for _, v := range postSample {
-
-		req, _ := http.NewRequest("GET", "/posts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/posts", nil)
 		req = mux.SetURLVars(req, map[string]string{"id": v.id})
-
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(server.DeletePost)
-
+		rec := httptest.NewRecorder()
+		c := server.Router.NewContext(req, rec)
 		req.Header.Set("Authorization", v.tokenGiven)
+		c.Echo().ServeHTTP(rec, req)
 
-		handler.ServeHTTP(rr, req)
+		// req, _ := http.NewRequest("GET", "/posts", nil)
+		// req = mux.SetURLVars(req, map[string]string{"id": v.id})
 
-		assert.Equal(t, rr.Code, v.statusCode)
+		// rr := httptest.NewRecorder()
+		// handler := http.HandlerFunc(server.DeletePost)
+
+		// req.Header.Set("Authorization", v.tokenGiven)
+
+		// handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, rec.Code, v.statusCode)
 
 		if v.statusCode == 401 && v.errorMessage != "" {
 
 			responseMap := make(map[string]interface{})
-			err = json.Unmarshal([]byte(rr.Body.String()), &responseMap)
+			err = json.Unmarshal([]byte(rec.Body.String()), &responseMap)
 			if err != nil {
 				t.Errorf("Cannot convert to json: %v", err)
 			}
