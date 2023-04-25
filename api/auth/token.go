@@ -11,6 +11,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo/v4"
 )
 
 func CreateToken(user_id uint32) (string, error) {
@@ -23,8 +24,8 @@ func CreateToken(user_id uint32) (string, error) {
 
 }
 
-func TokenValid(r *http.Request) error {
-	tokenString := ExtractToken(r)
+func TokenValid(c echo.Context) error {
+	tokenString := ExtractToken(c.Request())
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])

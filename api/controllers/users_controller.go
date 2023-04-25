@@ -53,43 +53,31 @@ func (server *Server) CreateUser(c echo.Context) error {
 }
 
 func (server *Server) GetUsers(c echo.Context) error {
-
 	user := models.User{}
-
 	users, err := user.FindAllUsers(server.DB)
 	if err != nil {
-		// responses.ERROR(c.Response(), http.StatusInternalServerError, err)
-		// return
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, users)
-	// responses.JSON(c.Response(), http.StatusOK, users)
 }
 
 func (server *Server) GetUser(c echo.Context) error {
-
-	vars := mux.Vars(c.Request())
-	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
-		// return
+		return c.JSON(http.StatusNoContent, err)
 	}
 	user := models.User{}
-	userGotten, err := user.FindUserByID(server.DB, uint32(uid))
+	userGotten, err := user.FindUserByID(server.DB, uint32(id))
 	if err != nil {
-		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
-		// return
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusOK, userGotten)
-	// responses.JSON(c.Response(), http.StatusOK, userGotten)
 }
 
 func (server *Server) UpdateUser(c echo.Context) error {
-
-	vars := mux.Vars(c.Request())
-	uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	// vars := mux.Vars(c.Request())
+	// uid, err := strconv.ParseUint(vars["id"], 10, 32)
+	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
@@ -114,7 +102,7 @@ func (server *Server) UpdateUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
 		// return
 	}
-	if tokenID != uint32(uid) {
+	if tokenID != uint32(id) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		// return
@@ -126,7 +114,7 @@ func (server *Server) UpdateUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
-	updatedUser, err := user.UpdateAUser(server.DB, uint32(uid))
+	updatedUser, err := user.UpdateAUser(server.DB, uint32(id))
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)

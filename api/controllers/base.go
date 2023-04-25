@@ -47,6 +47,7 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 			return nil
 		},
 	}))
+	
 	server.initializeRoutes()
 }
 
