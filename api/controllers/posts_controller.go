@@ -37,7 +37,7 @@ func (server *Server) CreatePost(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))
@@ -109,7 +109,7 @@ func (server *Server) UpdatePost(c echo.Context) error {
 	}
 
 	//CHeck if the auth token is valid and  get the user id from it
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))
@@ -190,7 +190,7 @@ func (server *Server) DeletePost(c echo.Context) error {
 	}
 
 	// Is this user authenticated?
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))

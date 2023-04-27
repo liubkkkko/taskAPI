@@ -96,7 +96,7 @@ func (server *Server) UpdateUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
-	tokenID, err := auth.ExtractTokenID(c.Request())
+	tokenID, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
@@ -137,7 +137,7 @@ func (server *Server) DeleteUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
 		// return
 	}
-	tokenID, err := auth.ExtractTokenID(c.Request())
+	tokenID, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
