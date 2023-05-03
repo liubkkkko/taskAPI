@@ -25,7 +25,7 @@ func (s *Server) initializeRoutes() {
 	//Posts routes
 	s.Router.POST("/posts", s.CreatePost)                                                //seems to work
 	s.Router.GET("/posts", s.GetPosts)                                                   //working
-	s.Router.GET("/posts/:id", s.GetPost)                                                //NOT WORKING
+	s.Router.GET("/posts/:id", s.GetPost)                                                //working
 	s.Router.PUT("/posts/:id", s.UpdatePost, middlewares.SetMiddlewareAuthentication)    //no info
 	s.Router.DELETE("/posts/:id", s.DeletePost, middlewares.SetMiddlewareAuthentication) //no info
 }
