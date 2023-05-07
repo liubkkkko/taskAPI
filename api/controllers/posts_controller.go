@@ -37,7 +37,7 @@ func (server *Server) CreatePost(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))
@@ -77,8 +77,9 @@ func (server *Server) GetPosts(c echo.Context) error {
 
 func (server *Server) GetPost(c echo.Context) error {
 
-	vars := mux.Vars(c.Request())
-	pid, err := strconv.ParseUint(vars["id"], 10, 64)
+	// vars := mux.Vars(c.Request())
+	// pid, err := strconv.ParseUint(vars["id"], 10, 64)
+	pid, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
@@ -86,7 +87,7 @@ func (server *Server) GetPost(c echo.Context) error {
 	}
 	post := models.Post{}
 
-	postReceived, err := post.FindPostByID(server.DB, pid)
+	postReceived, err := post.FindPostByID(server.DB, uint64(pid))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 		// responses.ERROR(c.Response(), http.StatusInternalServerError, err)
@@ -109,7 +110,7 @@ func (server *Server) UpdatePost(c echo.Context) error {
 	}
 
 	//CHeck if the auth token is valid and  get the user id from it
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))
@@ -190,7 +191,7 @@ func (server *Server) DeletePost(c echo.Context) error {
 	}
 
 	// Is this user authenticated?
-	uid, err := auth.ExtractTokenID(c.Request())
+	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("unauthorized"))
