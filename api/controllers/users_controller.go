@@ -77,18 +77,21 @@ func (server *Server) GetUser(c echo.Context) error {
 func (server *Server) UpdateUser(c echo.Context) error {
 	// vars := mux.Vars(c.Request())
 	// uid, err := strconv.ParseUint(vars["id"], 10, 32)
-	id, err := strconv.Atoi(c.Param("id"))
+	// id, err := strconv.Atoi(c.Param("id"))
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 		// responses.ERROR(c.Response(), http.StatusBadRequest, err)
 		// return
 	}
+	fmt.Println(id)
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
+	fmt.Println(body)
 	user := models.User{}
 	err = json.Unmarshal(body, &user)
 	if err != nil {
@@ -96,12 +99,14 @@ func (server *Server) UpdateUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
+	fmt.Println(user)
 	tokenID, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
 		// return
 	}
+	fmt.Println(tokenID)
 	if tokenID != uint32(id) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 		// responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
@@ -114,13 +119,16 @@ func (server *Server) UpdateUser(c echo.Context) error {
 		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
 		// return
 	}
+	fmt.Println(user)
 	updatedUser, err := user.UpdateAUser(server.DB, uint32(id))
 	if err != nil {
-		formattedError := formaterror.FormatError(err.Error())
-		return c.JSON(http.StatusInternalServerError, formattedError)
+		return c.JSON(http.StatusConflict, err)
+		// formattedError := formaterror.FormatError(err.Error())
+		// return c.JSON(http.StatusInternalServerError, formattedError)
 		// responses.ERROR(c.Response(), http.StatusInternalServerError, formattedError)
 		// return
 	}
+	fmt.Println(updatedUser)
 	// responses.JSON(c.Response(), http.StatusOK, updatedUser)
 	return c.JSON(http.StatusOK, updatedUser)
 }
