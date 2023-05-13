@@ -11,5 +11,5 @@ func (server *Server) Home(c echo.Context) error {
 }
 
 func (server *Server) TestRout(c echo.Context) error {
-	return c.JSON(http.StatusOK, "Sak my balls")
+	return c.JSON(http.StatusOK, "created new routs")
 }
