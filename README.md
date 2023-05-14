@@ -1,2 +1,1 @@
-# It's my pat project
-# CRUD REST full API
+# Pat project, CRUD REST full API

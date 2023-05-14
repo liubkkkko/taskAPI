@@ -26,8 +26,8 @@ func (s *Server) initializeRoutes() {
 	s.Router.POST("/posts", s.CreatePost, middlewares.SetMiddlewareAuthentication)       //work if you use token
 	s.Router.GET("/posts", s.GetPosts)                                                   //working
 	s.Router.GET("/posts/:id", s.GetPost)                                                //working
-	s.Router.PUT("/posts/:id", s.UpdatePost, middlewares.SetMiddlewareAuthentication)    //no info
-	s.Router.DELETE("/posts/:id", s.DeletePost, middlewares.SetMiddlewareAuthentication) //no info
+	s.Router.PUT("/posts/:id", s.UpdatePost, middlewares.SetMiddlewareAuthentication)    //working (only if you Update your own post)
+	s.Router.DELETE("/posts/:id", s.DeletePost, middlewares.SetMiddlewareAuthentication) //working (only if you Delete your own post)
 
 	//Task routes
 	s.Router.POST("/tasks", s.CreateTask) //working

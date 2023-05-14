@@ -32,7 +32,7 @@ func (server *Server) CreateTask(c echo.Context) error {
 	uid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	}
+	} 
 	if uid != task.AuthorID {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
