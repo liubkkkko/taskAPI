@@ -79,3 +79,48 @@ func (t *Task) FindAllTasks(db *gorm.DB) (*[]Task, error) {
 	}
 	return &tasks, nil
 }
+
+func (t *Task) FindTaskByID(db *gorm.DB, pid uint64) (*Task, error) {
+	var err error
+	err = db.Debug().Model(&Task{}).Where("id = ?", pid).Take(&t).Error
+	if err != nil {
+		return &Task{}, err
+	}
+	if t.ID != 0 {
+		err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
+		if err != nil {
+			return &Task{}, err
+		}
+	}
+	return t, nil
+}
+
+func (t *Task) UpdateATask(db *gorm.DB) (*Task, error) {
+
+	var err error
+
+	err = db.Debug().Model(&Task{}).Where("id = ?", t.ID).Updates(Task{Title: t.Title, Content: t.Content, Status: t.Status, UpdatedAt: time.Now()}).Error
+	if err != nil {
+		return &Task{}, err
+	}
+	if t.ID != 0 {
+		err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
+		if err != nil {
+			return &Task{}, err
+		}
+	}
+	return t, nil
+}
+
+func (t *Task) DeleteATask(db *gorm.DB, tid uint64, uid uint32) (int64, error) {
+
+	db = db.Debug().Model(&Task{}).Where("id = ? and author_id = ?", tid, uid).Take(&Task{}).Delete(&Task{})
+
+	if db.Error != nil {
+		if gorm.IsRecordNotFoundError(db.Error) {
+			return 0, echo.NewHTTPError(404, "Task not found")
+		}
+		return 0, db.Error
+	}
+	return db.RowsAffected, nil
+}

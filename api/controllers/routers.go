@@ -30,6 +30,9 @@ func (s *Server) initializeRoutes() {
 	s.Router.DELETE("/posts/:id", s.DeletePost, middlewares.SetMiddlewareAuthentication) //working (only if you Delete your own post)
 
 	//Task routes
-	s.Router.POST("/tasks", s.CreateTask) //working
+	s.Router.POST("/tasks", s.CreateTask, middlewares.SetMiddlewareAuthentication) //working
 	s.Router.GET("/tasks", s.GetTasks)    //working
+	s.Router.GET("/tasks/:id",s.GetTask)
+	s.Router.PUT("/tasks/:id",s.UpdateTask, middlewares.SetMiddlewareAuthentication)
+	s.Router.DELETE("/tasks/:id",s.DeleteTask, middlewares.SetMiddlewareAuthentication)
 }
