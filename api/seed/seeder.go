@@ -45,11 +45,11 @@ var tasks = []models.Task{
 }
 func Load(db *gorm.DB) {
 
-	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}, &models.Task{}).Error
+	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}, &models.Task{}, &models.Author{}, &models.Workspace{}, &models.Job{}).Error
 	if err != nil {
 		log.Fatalf("cannot drop table: %v", err)
 	}
-	err = db.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Task{}).Error
+	err = db.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Task{}, &models.Author{}, &models.Workspace{}, &models.Job{}).Error
 	if err != nil {
 		log.Fatalf("cannot migrate table: %v", err)
 	}
