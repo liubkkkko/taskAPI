@@ -30,10 +30,13 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		fmt.Printf("We are connected to the %s database", Dbdriver)
 	}
 
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{}) //database migration
+	//database migration
+	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{}) 
 
+	//create new instance router
 	server.Router = echo.New()
 
+	//initialize logger
 	logger, _ := zap.NewProduction()
 	server.Router.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
@@ -43,7 +46,6 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 				zap.String("URI", v.URI),
 				zap.Int("status", v.Status),
 			)
-
 			return nil
 		},
 	}))
