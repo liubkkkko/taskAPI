@@ -72,14 +72,14 @@ var authors = []models.Author{
 }
 
 var jobs = []models.Job{
-	// {
-	// 	Title:   "Task1",
-	// 	Content: "heh work",
-	// },
-	// {
-	// 	Title:   "Task2",
-	// 	Content: "heh workkk",
-	// },
+	{
+		Title:   "Task1",
+		Content: "heh work",
+	},
+	{
+		Title:   "Task2",
+		Content: "heh workkk",
+	},
 	{
 		Title:   "Task3",
 		Content: "heh task",
@@ -98,7 +98,6 @@ var workspaces = []models.Workspace{
 			{Title: "Task1", Content: "heh work"},
 		},
 		Authors: []*models.Author{
-			{Nickname: "Name1", Email: "author1@gmail.com"},
 			{Nickname: "Name2", Email: "author2@gmail.com"},
 		},
 	},
@@ -111,18 +110,31 @@ var workspaces = []models.Workspace{
 		},
 		Authors: []*models.Author{
 			{Nickname: "Name1", Email: "author1@gmail.com"},
-			{Nickname: "Name2", Email: "author2@gmail.com"},
 		},
 	},
 }
+var workspace2 = workspaces[1]
+var workspace1 = workspaces[0]
+// models.Workspace{
+
+// 	Name:        "Workspace1",
+// 	Description: "heh work",
+// 	Jobs: []models.Job{
+// 		{Title: "Task1", Content: "heh work"},
+// 	},
+// 	Authors: []*models.Author{
+// 		{Nickname: "Name1", Email: "author1@gmail.com"},
+// 		{Nickname: "Name2", Email: "author2@gmail.com"},
+// 	},
+// }
 
 func Load(db *gorm.DB) {
 
-	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}, &models.Task{}, &models.Author{}, &models.Workspace{}, &models.Job{}).Error
-	if err != nil {
-		log.Fatalf("cannot drop table: %v", err)
-	}
-	err = db.Debug().AutoMigrate(&models.User{},
+	// err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}, &models.Task{}, &models.Job{}, &models.Author{}, &models.Workspace{},).Error
+	// if err != nil {
+	// 	log.Fatalf("cannot drop table: %v", err)
+	// }
+	err := db.Debug().AutoMigrate(&models.User{},
 		&models.Post{},
 		&models.Task{},
 		&models.Author{},
@@ -152,23 +164,27 @@ func Load(db *gorm.DB) {
 		log.Fatalf("attaching foreign key error: %v", err)
 	}
 
+	// db.Create(&workspace1).Save(&workspace1)
+	// db.Create(&workspace2).Save(&workspace2)
+
 	for i := range users {
-		err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed workspace table: %v", err)
-		}
+		// err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
+		// if err != nil {
+		// 	log.Fatalf("cannot seed workspace table: %v", err)
+		// }
 
-		err = db.Debug().Model(&models.Author{}).Create(&authors[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed authors table: %v", err)
-		}
-		jobs[i].WorkspaceID = workspaces[i].ID
-		jobs[i].AuthorID = authors[i].ID
-
+		// err = db.Debug().Model(&models.Author{}).Create(&authors[i]).Error
+		// if err != nil {
+		// 	log.Fatalf("cannot seed authors table: %v", err)
+		// }
+		
 		err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed jobs table: %v", err)
 		}
+
+		jobs[i].WorkspaceID = workspaces[i].ID
+		jobs[i].AuthorID = authors[i].ID
 
 		////////////////////////////////////////////////////////////////
 

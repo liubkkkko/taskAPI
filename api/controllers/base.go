@@ -11,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 
-	"github.com/liubkkkko/firstAPI/api/models"
+	// "github.com/liubkkkko/firstAPI/api/models"
 )
 
 type Server struct {
@@ -31,7 +31,7 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 	}
 
 	//database migration
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{}) 
+	// server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{}) 
 
 	//create new instance router
 	server.Router = echo.New()
