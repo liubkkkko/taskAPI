@@ -43,13 +43,84 @@ var tasks = []models.Task{
 		Status: "In proces",
 	},
 }
+
+
+var authors = []models.Author{
+	{
+		Nickname: "jinzhu",
+		Email:    "jinzhu@gmail.com",
+		Password: "jinzhu123",
+		Jobs: []models.Job{
+			{Title: "Task1", Content: "heh work"},
+		},
+		Workspaces: []*models.Workspace{
+			{Name: "Workspace1", Description: "heh work"},
+		},
+	},
+	{
+		Nickname: "liubkkkk0",
+		Email:    "liubkkkk0@gmail.com",
+		Password: "liubkkkk0322",
+		Jobs: []models.Job{
+			{Title: "Task2", Content: "heh workkk"},
+		},
+		Workspaces: []*models.Workspace{
+			{Name: "Workspace2", Description: "heh workkk"},
+		},
+	},
+}
+
+var jobs = []models.Job{
+	{
+		Title:   "Task1",
+		Content: "heh work",
+	},
+	{
+		Title:   "Task2",
+		Content: "heh workkk",
+	},
+	// {
+	// 	Title:   "Task3",
+	// 	Content: "heh task",
+	// },
+	// {
+	// 	Title:   "Task4",
+	// 	Content: "heh taskk",
+	// },
+}
+
+var workspaces = []models.Workspace{
+	{
+		Name:        "Workspace1",
+		Description: "heh work",
+		Jobs: []models.Job{
+			{Title: "Task1", Content: "heh work"},
+		},
+		Authors: []*models.Author{
+			{Nickname: "Name2", Email: "author2@gmail.com"},
+		},
+	},
+
+	{
+		Name:        "Workspace2",
+		Description: "heh workkkk",
+		Jobs: []models.Job{
+			{Title: "Task2", Content: "heh workkk"},
+		},
+		Authors: []*models.Author{
+			{Nickname: "Name1", Email: "author1@gmail.com"},
+		},
+	},
+}
+
+
 func Load(db *gorm.DB) {
 
-	err := db.Debug().DropTableIfExists(&models.Post{}, &models.User{}, &models.Task{}).Error
+	err := db.Debug().DropTableIfExists(&models.Post{},  &models.Task{}, &models.User{},  &models.Author{}, &models.Job{}, &models.Workspace{},).Error
 	if err != nil {
 		log.Fatalf("cannot drop table: %v", err)
 	}
-	err = db.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Task{}).Error
+	err = db.Debug().AutoMigrate(&models.User{}, &models.Post{},  &models.Task{}, &models.Author{}, &models.Job{}, &models.Workspace{},).Error
 	if err != nil {
 		log.Fatalf("cannot migrate table: %v", err)
 	}
@@ -84,5 +155,20 @@ func Load(db *gorm.DB) {
 		if err != nil {
 			log.Fatalf("cannot seed posts table: %v", err)
 		}
+
+		err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed jobs table: %v", err)
+		}
+
+		err = db.Debug().Model(&models.Author{}).Create(&authors[i]).Error
+		if err != nil {
+			log.Fatalf("cannot seed authors table: %v", err)
+		}
+
+		// err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
+		// if err != nil {
+		// 	log.Fatalf("cannot seed workspaces table: %v", err)
+		// }
 	}
 }
