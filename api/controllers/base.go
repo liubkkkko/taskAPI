@@ -10,8 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
-
-	"github.com/liubkkkko/firstAPI/api/models"
 )
 
 type Server struct {
@@ -30,7 +28,7 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		fmt.Printf("We are connected to the %s database", Dbdriver)
 	}
 
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Task{}, &models.Author{}, &models.Job{}, &models.Workspace{},) //database migration
+	// server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Task{}, &models.Author{}, &models.Job{}, &models.Workspace{},) //database migration
 
 	server.Router = echo.New()
 
@@ -47,7 +45,7 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 			return nil
 		},
 	}))
-	
+
 	server.initializeRoutes()
 }
 
