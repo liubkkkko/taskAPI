@@ -15,6 +15,7 @@ type Workspace struct {
 	Description string    `gorm:"column:description;size:255;not null;" json:"description"`
 	Status      string    `gorm:"column:status;size:100;not null;default:'created'" json:"status"`
 	Jobs        []Job     `gorm:"foreignKey:workspace_id"`
+	// Author      Author    `json:"author"`
 	Authors     []*Author `gorm:"many2many:author_workspace;"`
 	CreatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
@@ -25,6 +26,7 @@ func (w *Workspace) Prepare() {
 	w.Name = html.EscapeString(strings.TrimSpace(w.Name))
 	w.Description = html.EscapeString(strings.TrimSpace(w.Description))
 	w.Status = html.EscapeString(strings.TrimSpace(w.Status))
+	// w.Author = Author{}
 	w.Jobs = []Job{}
 	w.Authors = []*Author{}
 	w.CreatedAt = time.Now()
@@ -104,7 +106,7 @@ func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
 	return w, nil
 }
 
-func (t *Task) DeleteAWorkspace(db *gorm.DB, tid uint64, uid uint32) (int64, error) {
+func (w *Workspace) DeleteAWorkspace(db *gorm.DB, tid uint64, uid uint32) (int64, error) {
 	db = db.Debug().Model(&Workspace{}).Where("id = ? and author_id = ?", tid, uid).Take(&Workspace{}).Delete(&Workspace{})
 	if db.Error != nil {
 		if gorm.IsRecordNotFoundError(db.Error) {
