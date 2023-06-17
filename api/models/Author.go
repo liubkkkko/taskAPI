@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Author struct {
@@ -117,7 +117,7 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 	if err != nil {
 		return &Author{}, err
 	}
-	if gorm.IsRecordNotFoundError(err) {
+	if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 		return &Author{}, errors.New("User Not Found")
 	}
 	return a, err

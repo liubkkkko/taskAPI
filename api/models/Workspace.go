@@ -1,12 +1,14 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"html"
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"gorm.io/gorm"
 )
 
 type Workspace struct {
@@ -25,7 +27,6 @@ func (w *Workspace) Prepare() {
 	w.Name = html.EscapeString(strings.TrimSpace(w.Name))
 	w.Description = html.EscapeString(strings.TrimSpace(w.Description))
 	w.Status = html.EscapeString(strings.TrimSpace(w.Status))
-	// w.Author = Author{}
 	w.Jobs = []Job{}
 	w.Authors = []*Author{}
 	w.CreatedAt = time.Now()
@@ -48,9 +49,10 @@ func (w *Workspace) Validate() error {
 func (w *Workspace) GetAllAuthorsId() []uint64 {
 
 	authorIDs := make([]uint64, len(w.Authors))
-	for i, author := range w.Authors {
-		authorIDs[i] = author.ID
+	for _, author := range w.Authors {
+		authorIDs = append(authorIDs, author.ID)
 	}
+	fmt.Println(authorIDs)
 	return authorIDs
 
 }
@@ -75,13 +77,7 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 	if err != nil {
 		return &Workspace{}, err
 	}
-	//IN THE FEAUTHURE ADD CHECK TO WRITE SAME DATA
-	// if w.ID != 0 {
-	// 	err = db.Debug().Model(&Task{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
-	// 	if err != nil {
-	// 		return &Task{}, err
-	// 	}
-	// }
+
 	return w, nil
 }
 
@@ -91,15 +87,21 @@ func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
 	if err != nil {
 		return &[]Workspace{}, err
 	}
-	// if len(workspace) > 0 {
-	// 	for i := range workspace {
-	// 		err := db.Debug().Model(&User{}).Where("id = ?", tasks[i].AuthorID).Take(&tasks[i].Author).Error
-	// 		if err != nil {
-	// 			return &[]Task{}, err
-	// 		}
-	// 	}
-	// }
+	if len(workspace) > 0 {
+		for i := range workspace {
+			authorsIds := workspace[i].GetAllAuthorsId()
+			for j := range authorsIds {
+				author := &Author{}
+				err := db.Debug().Model(&Author{}).Where("id = ?", authorsIds[j]).First(author).Error
+				if err != nil {
+					return &[]Workspace{}, err
+				}
+				workspace[i].Authors = append(workspace[i].Authors, author)
+			}
+		}
+	}
 	return &workspace, nil
+
 }
 
 func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, wid uint32) error {
@@ -141,7 +143,7 @@ func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
 func (w *Workspace) DeleteAWorkspace(db *gorm.DB, tid uint64, uid uint32) (int64, error) {
 	db = db.Debug().Model(&Workspace{}).Where("id = ? and author_id = ?", tid, uid).Take(&Workspace{}).Delete(&Workspace{})
 	if db.Error != nil {
-		if gorm.IsRecordNotFoundError(db.Error) {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			return 0, echo.NewHTTPError(404, "Task not found")
 		}
 		return 0, db.Error

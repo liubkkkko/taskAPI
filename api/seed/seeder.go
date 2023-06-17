@@ -3,8 +3,8 @@ package seed
 import (
 	"log"
 
-	"github.com/jinzhu/gorm"
 	"github.com/liubkkkko/firstAPI/api/models"
+	"gorm.io/gorm"
 )
 
 var users = []models.User{
@@ -128,51 +128,58 @@ var workspaces = []models.Workspace{
 // }
 
 func Load(db *gorm.DB) {
-
-	err := db.Debug().DropTableIfExists(
+	var err error
+	if err = db.Migrator().DropTable(
 		&models.Post{},
 		&models.User{},
 		&models.Task{},
 		&models.Job{},
 		&models.Author{},
 		&models.Workspace{},
-	).Error
-	if err != nil {
-		log.Fatalf("cannot drop table: %v", err)
+	); err != nil {
+		panic("failed to drop table")
 	}
-	err = db.Debug().AutoMigrate(
+
+	if err = db.AutoMigrate(
 		&models.User{},
 		&models.Post{},
 		&models.Task{},
 		&models.Author{},
 		&models.Workspace{},
-		&models.Job{}).Error
-	if err != nil {
-		log.Fatalf("cannot migrate table: %v", err)
+		&models.Job{},
+	); err != nil {
+		panic("failed to drop table")
 	}
 
-	err = db.Debug().Model(&models.Post{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
-	if err != nil {
-		log.Fatalf("attaching foreign key error: %v", err)
+	if err = db.SetupJoinTable(&models.Author{}, "Workspace", &models.AuthorWorkspace{})
+	err != nil	{
+		panic("failed to Join table")
 	}
+	
 
-	err = db.Debug().Model(&models.Task{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
-	if err != nil {
-		log.Fatalf("attaching foreign key error: %v", err)
-	}
+	// err = db.Debug().Model(&models.Post{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
+	// if err != nil {
+	// 	log.Fatalf("attaching foreign key error: %v", err)
+	// }
 
-	err = db.Debug().Model(&models.Job{}).AddForeignKey("author_id", "authors(id)", "cascade", "cascade").Error
-	if err != nil {
-		log.Fatalf("attaching foreign key error: %v", err)
-	}
+	// err = db.Debug().Model(&models.Task{}).AddForeignKey("author_id", "users(id)", "cascade", "cascade").Error
+	// if err != nil {
+	// 	log.Fatalf("attaching foreign key error: %v", err)
+	// }
 
-	err = db.Debug().Model(&models.Job{}).AddForeignKey("workspace_id", "workspaces(id)", "cascade", "cascade").Error
-	if err != nil {
-		log.Fatalf("attaching foreign key error: %v", err)
-	}
+	// err = db.Debug().Model(&models.Job{}).AddForeignKey("author_id", "authors(id)", "cascade", "cascade").Error
+	// if err != nil {
+	// 	log.Fatalf("attaching foreign key error: %v", err)
+	// }
+
+	// err = db.Debug().Model(&models.Job{}).AddForeignKey("workspace_id", "workspaces(id)", "cascade", "cascade").Error
+	// if err != nil {
+	// 	log.Fatalf("attaching foreign key error: %v", err)
+	// }
 
 	for i := range users {
-		err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
+
+		err := db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed workspace table: %v", err)
 		}
