@@ -34,7 +34,7 @@ func (server *Server) CreatePost(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-	if uid != post.AuthorID {
+	if uid != post.AuthorID || uid == post.Author.ID {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
 	postCreated, err := post.SavePost(server.DB)

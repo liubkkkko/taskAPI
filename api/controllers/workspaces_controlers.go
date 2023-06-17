@@ -30,14 +30,21 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	// uid, err := auth.ExtractTokenID(c)
-	// if err != nil {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	// }
 
-	// if uid != uint32(workspace.Author.ID) {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
-	// }
+	aid, err := auth.ExtractTokenID(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
+	}
+
+	err = workspace.AddAuthorsToWorkspace(server.DB, aid)
+	if err != nil {
+		return c.JSON(http.StatusFailedDependency, err)
+	}
+
+	err = workspace.CheckIfYouAuthor(uint64(aid))
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, err)
+	}
 	workspaceCreated, err := workspace.SaveWorkspace(server.DB)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())

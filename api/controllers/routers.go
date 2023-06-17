@@ -37,7 +37,11 @@ func (s *Server) initializeRoutes() {
 	s.Router.DELETE("/tasks/:id", s.DeleteTask, middlewares.SetMiddlewareAuthentication)
 
 	//Author routes
-	s.Router.POST("/authors", s.CreateAuthor) //working
+	s.Router.POST("/authors", s.CreateAuthor, middlewares.SetMiddlewareAuthentication) //working
 	s.Router.GET("/authors", s.GetAuthors)    //working
 
+
+	//Workspace routes
+	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication)
+	s.Router.GET("/workspces", s.GetWorkspace)
 }
