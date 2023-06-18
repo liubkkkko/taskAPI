@@ -31,7 +31,7 @@ type Author struct {
 // 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 // }
 
-func (a *Author) BeforeSave() error {
+func (a *Author) BeforeSave1() error {
 	hashedPassword, err := Hash(a.Password)
 	if err != nil {
 		return err
@@ -126,7 +126,7 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
 
 	// To hash the password
-	err := a.BeforeSave()
+	err := a.BeforeSave1()
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -37,12 +37,12 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-
+	fmt.Println("before to add authors", workspace)
 	err = workspace.AddAuthorsToWorkspace(server.DB, aid)
 	if err != nil {
 		return c.JSON(http.StatusFailedDependency, err)
 	}
-
+	fmt.Println("after to add authors", workspace)
 	err = workspace.CheckIfYouAuthor(uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
@@ -53,7 +53,7 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-
+	fmt.Println("workspaceCreated", workspaceCreated)
 	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, workspaceCreated.ID))
 	return c.JSON(http.StatusCreated, workspaceCreated)
 }

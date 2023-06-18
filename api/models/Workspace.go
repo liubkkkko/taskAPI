@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"html"
 	"strings"
 	"time"
@@ -52,23 +51,18 @@ func (w *Workspace) GetAllAuthorsId() []uint64 {
 	for _, author := range w.Authors {
 		authorIDs = append(authorIDs, author.ID)
 	}
-	fmt.Println(authorIDs)
+	// fmt.Println(authorIDs)
 	return authorIDs
 
 }
 
 func (w *Workspace) CheckIfYouAuthor(aid uint64) error {
-	allUsersId := w.GetAllAuthorsId()
-	authorised := false
-	for i := range allUsersId {
-		if aid == allUsersId[i] {
-			authorised = true
+	for _, id := range w.GetAllAuthorsId() {
+		if id == aid {
+			return nil
 		}
 	}
-	if !authorised {
-		return echo.ErrUnauthorized
-	}
-	return nil
+	return echo.ErrUnauthorized
 
 }
 
@@ -104,11 +98,15 @@ func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
 
 }
 
-func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, wid uint32) error {
-	err := db.Debug().Model(&Author{}).Where("id = ?", wid).Take(&w.Authors).Error
+func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, aid uint32) error {
+	err := db.Debug().Model(&Author{}).Where("id = ?", aid).Take(&w.Authors).Error
 	if err != nil {
 		return err
 	}
+	// err = db.Debug().Save(&w).Error
+	// if err != nil {
+	// 	log.Fatalf("error to save: %v", err)
+	// }
 	return nil
 }
 
