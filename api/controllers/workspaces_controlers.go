@@ -20,27 +20,26 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
+
 	workspace := models.Workspace{}
 	err = json.Unmarshal(body, &workspace)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
+
 	workspace.Prepare()
 	err = workspace.Validate()
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-
 	aid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-
 	err = workspace.AddAuthorsToWorkspace(server.DB, aid)
 	if err != nil {
 		return c.JSON(http.StatusFailedDependency, err)
 	}
-
 	err = workspace.CheckIfYouAuthor(uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
@@ -54,7 +53,24 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	return c.JSON(http.StatusCreated, workspaceCreated)
 }
 
-func (server *Server) GetWorkspace(c echo.Context) error {
+func (server *Server) GetWorkspacesByAuthorId(c echo.Context) error {
+	aid, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	author := models.Author{}
+
+	err = author.FindAuthorByIDForWorkspace(server.DB, uint32(aid))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	workspaces := author.Workspaces
+	return c.JSON(http.StatusOK, workspaces)
+}
+
+func (server *Server) GetWorkspaces(c echo.Context) error {
 
 	workspace := models.Workspace{}
 
@@ -65,7 +81,7 @@ func (server *Server) GetWorkspace(c echo.Context) error {
 	return c.JSON(http.StatusOK, posts)
 }
 
-func (server *Server) GetWorkspaces(c echo.Context) error {
+func (server *Server) GetWorkspace(c echo.Context) error {
 
 	wid, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -89,10 +105,10 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	}
 
 	//CHeck if the auth token is valid and  get the user id from it
-	// uid, err := auth.ExtractTokenID(c)
-	// if err != nil {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	// }
+	uid, err := auth.ExtractTokenID(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
+	}
 
 	// Check if the post exist
 	workspace := models.Workspace{}
@@ -102,9 +118,10 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	}
 
 	// If a user attempt to update a post not belonging to him
-	// if uid != post.AuthorID {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	// }
+	err = workspace.CheckIfYouAuthor(uint64(uid))
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
+	}
 	// Read the data posted
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
@@ -119,9 +136,10 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	}
 
 	//Also check if the request user id is equal to the one gotten from token
-	// if uid != workspaceUpdate.AuthorID {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
-	// }
+	err = workspaceUpdate.CheckIfYouAuthor(uint64(uid))
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
+	}
 
 	workspaceUpdate.Prepare()
 	err = workspaceUpdate.Validate()
@@ -162,9 +180,10 @@ func (server *Server) DeleteAWorkspace(c echo.Context) error {
 	}
 
 	// Is the authenticated user, the owner of this post?
-	// if uid != workspace.AuthorID {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
-	// }
+	err = workspace.CheckIfYouAuthor(uint64(uid))
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
+	}
 
 	_, err = workspace.DeleteAWorkspace(server.DB, pid, uid)
 

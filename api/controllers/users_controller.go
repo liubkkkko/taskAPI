@@ -60,7 +60,7 @@ func (server *Server) GetUser(c echo.Context) error {
 	user := models.User{}
 	userGotten, err := user.FindUserByID(server.DB, uint32(id))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusNotFound, err)
 	}
 	return c.JSON(http.StatusOK, userGotten)
 }

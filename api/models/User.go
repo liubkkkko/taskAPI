@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,7 +29,7 @@ func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func (u *User) BeforeSave() error {
+func (u *User) BeforeSave1() error {
 	hashedPassword, err := Hash(u.Password)
 	if err != nil {
 		return err
@@ -115,7 +115,7 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 	if err != nil {
 		return &User{}, err
 	}
-	if gorm.IsRecordNotFoundError(err) {
+	if errors.Is(db.Error, gorm.ErrRecordNotFound){
 		return &User{}, errors.New("User Not Found")
 	}
 	return u, err
@@ -124,7 +124,7 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
 
 	// To hash the password
-	err := u.BeforeSave()
+	err := u.BeforeSave1()
 	if err != nil {
 		log.Fatal(err)
 	}

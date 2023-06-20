@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Author struct {
@@ -31,7 +31,7 @@ type Author struct {
 // 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 // }
 
-func (a *Author) BeforeSave() error {
+func (a *Author) BeforeSave1() error {
 	hashedPassword, err := Hash(a.Password)
 	if err != nil {
 		return err
@@ -112,12 +112,29 @@ func (a *Author) FindAllAuthors(db *gorm.DB) (*[]Author, error) {
 	return &authors, err
 }
 
+func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) (error) {
+	err := db.Debug().Model(&Author{}).Where("id = ?", aid).First(a).Error
+	if err != nil {
+		return err
+	}
+
+	// Preload Author Workspaces
+	err = db.Debug().Model(&Author{}).Where("id = ?", a.ID).Preload("Workspaces").Find(a).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+
+
 func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 	err := db.Debug().Model(Author{}).Where("id = ?", uid).Take(&a).Error
 	if err != nil {
 		return &Author{}, err
 	}
-	if gorm.IsRecordNotFoundError(err) {
+	if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 		return &Author{}, errors.New("User Not Found")
 	}
 	return a, err
@@ -126,7 +143,7 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
 
 	// To hash the password
-	err := a.BeforeSave()
+	err := a.BeforeSave1()
 	if err != nil {
 		log.Fatal(err)
 	}
