@@ -43,5 +43,6 @@ func (s *Server) initializeRoutes() {
 
 	//Workspace routes
 	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication)
-	s.Router.GET("/workspces", s.GetWorkspace)
+	s.Router.GET("/workspces", s.GetWorkspaces)
+	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId)
 }

@@ -82,7 +82,7 @@ var workspaces = []models.Workspace{
 
 func Load(db *gorm.DB) {
 	var err error
-	if err = db.Migrator().DropTable(
+	if err = db.Debug().Migrator().DropTable(
 		&models.Post{},
 		&models.User{},
 		&models.Task{},
@@ -93,7 +93,7 @@ func Load(db *gorm.DB) {
 		log.Fatal("failed to drop table")
 	}
 
-	if err = db.AutoMigrate(
+	if err = db.Debug().AutoMigrate(
 		&models.User{},
 		&models.Post{},
 		&models.Task{},

@@ -32,33 +32,45 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-
 	aid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-	fmt.Println("before to add authors", workspace)
 	err = workspace.AddAuthorsToWorkspace(server.DB, aid)
 	if err != nil {
 		return c.JSON(http.StatusFailedDependency, err)
 	}
-	fmt.Println("after to add authors", workspace)
 	err = workspace.CheckIfYouAuthor(uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
 	}
-
 	workspaceCreated, err := workspace.SaveWorkspace(server.DB)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	fmt.Println("workspaceCreated", workspaceCreated)
 	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, workspaceCreated.ID))
 	return c.JSON(http.StatusCreated, workspaceCreated)
 }
 
-func (server *Server) GetWorkspace(c echo.Context) error {
+func (server *Server) GetWorkspacesByAuthorId(c echo.Context) error {
+	aid, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	author := models.Author{}
+
+	err = author.FindAuthorByIDForWorkspace(server.DB, uint32(aid))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	workspaces := author.Workspaces
+	return c.JSON(http.StatusOK, workspaces)
+}
+
+func (server *Server) GetWorkspaces(c echo.Context) error {
 
 	workspace := models.Workspace{}
 
@@ -69,7 +81,7 @@ func (server *Server) GetWorkspace(c echo.Context) error {
 	return c.JSON(http.StatusOK, posts)
 }
 
-func (server *Server) GetWorkspaces(c echo.Context) error {
+func (server *Server) GetWorkspace(c echo.Context) error {
 
 	wid, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"html"
 	"strings"
 	"time"
@@ -51,7 +52,6 @@ func (w *Workspace) GetAllAuthorsId() []uint64 {
 	for _, author := range w.Authors {
 		authorIDs = append(authorIDs, author.ID)
 	}
-	// fmt.Println(authorIDs)
 	return authorIDs
 
 }
@@ -71,7 +71,7 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 	if err != nil {
 		return &Workspace{}, err
 	}
-
+	fmt.Println("After save workspace", w.Authors[0], w)
 	return w, nil
 }
 
@@ -123,6 +123,22 @@ func (w *Workspace) FindWorkspaceByID(db *gorm.DB, pid uint64) (*Workspace, erro
 	// }
 	return w, nil
 }
+
+// func (w *Workspace) FindWorkspaceByAuthorID(db *gorm.DB, aid uint64) (*Workspace, error) {
+// 	err :=  db.Debug().Model(&Workspace{}).Where()
+// 	err = db.Debug().Model(&Workspace{}).Where("id = ?", aid).Take(&w).Error
+// 	if err != nil {
+// 		return &Workspace{}, err
+// 	}
+// 	// if t.ID != 0 {
+// 	// 	err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
+// 	// 	if err != nil {
+// 	// 		return &Task{}, err
+// 	// 	}
+// 	// }
+// 	return w, nil
+// }
+
 
 func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
 	err := db.Debug().Model(&Workspace{}).Where("id = ?", w.ID).Updates(Workspace{Name: w.Name, Description: w.Description, Status: w.Status, UpdatedAt: time.Now()}).Error
