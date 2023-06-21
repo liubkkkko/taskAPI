@@ -45,4 +45,6 @@ func (s *Server) initializeRoutes() {
 	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication)
 	s.Router.GET("/workspces", s.GetWorkspaces)
 	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId)
+	s.Router.GET("/workspces1", s.TestHandler) //in the feauture this rout will replace GetWorkspaces 
+
 }

@@ -66,6 +66,15 @@ func (w *Workspace) CheckIfYouAuthor(aid uint64) error {
 
 }
 
+func (w *Workspace) FindAllWorkspacesTest(db *gorm.DB) (*[]Workspace, error) {
+    workspaces := []Workspace{}
+    err := db.Debug().Preload("Authors").Limit(100).Find(&workspaces).Error
+    if err != nil {
+        return &[]Workspace{}, err
+    }
+    return &workspaces, nil
+}
+
 func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 	err := db.Debug().Model(&Workspace{}).Create(&w).Error
 	if err != nil {
@@ -123,22 +132,6 @@ func (w *Workspace) FindWorkspaceByID(db *gorm.DB, pid uint64) (*Workspace, erro
 	// }
 	return w, nil
 }
-
-// func (w *Workspace) FindWorkspaceByAuthorID(db *gorm.DB, aid uint64) (*Workspace, error) {
-// 	err :=  db.Debug().Model(&Workspace{}).Where()
-// 	err = db.Debug().Model(&Workspace{}).Where("id = ?", aid).Take(&w).Error
-// 	if err != nil {
-// 		return &Workspace{}, err
-// 	}
-// 	// if t.ID != 0 {
-// 	// 	err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
-// 	// 	if err != nil {
-// 	// 		return &Task{}, err
-// 	// 	}
-// 	// }
-// 	return w, nil
-// }
-
 
 func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
 	err := db.Debug().Model(&Workspace{}).Where("id = ?", w.ID).Updates(Workspace{Name: w.Name, Description: w.Description, Status: w.Status, UpdatedAt: time.Now()}).Error

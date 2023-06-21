@@ -70,15 +70,16 @@ func (server *Server) GetWorkspacesByAuthorId(c echo.Context) error {
 	return c.JSON(http.StatusOK, workspaces)
 }
 
-func (server *Server) GetWorkspaces(c echo.Context) error {
+func (server *Server) TestHandler(c echo.Context) error {
 
 	workspace := models.Workspace{}
 
-	posts, err := workspace.FindAllWorkspaces(server.DB)
+	workspaces, err := workspace.FindAllWorkspacesTest(server.DB)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, posts)
+	return c.JSON(http.StatusOK, workspaces)
+
 }
 
 func (server *Server) GetWorkspace(c echo.Context) error {
@@ -94,6 +95,18 @@ func (server *Server) GetWorkspace(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, postReceived)
+}
+
+
+func (server *Server) GetWorkspaces(c echo.Context) error {
+
+	workspace := models.Workspace{}
+
+	workspaces, err := workspace.FindAllWorkspaces(server.DB)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, workspaces)
 }
 
 func (server *Server) UpdateWorkspace(c echo.Context) error {
