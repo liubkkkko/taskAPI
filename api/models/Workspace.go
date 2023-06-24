@@ -57,6 +57,8 @@ func (w *Workspace) GetAllAuthorsId() []uint64 {
 }
 
 func (w *Workspace) CheckIfYouAuthor(aid uint64) error {
+
+	
 	for _, id := range w.GetAllAuthorsId() {
 		if id == aid {
 			return nil
@@ -66,7 +68,7 @@ func (w *Workspace) CheckIfYouAuthor(aid uint64) error {
 
 }
 
-func (w *Workspace) FindAllWorkspacesTest(db *gorm.DB) (*[]Workspace, error) {
+func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
     workspaces := []Workspace{}
     err := db.Debug().Preload("Authors").Limit(100).Find(&workspaces).Error
     if err != nil {
@@ -84,52 +86,91 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 	return w, nil
 }
 
-func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
-	workspace := []Workspace{}
-	err := db.Debug().Model(&Workspace{}).Limit(100).Find(&workspace).Error
-	if err != nil {
-		return &[]Workspace{}, err
-	}
-	if len(workspace) > 0 {
-		for i := range workspace {
-			authorsIds := workspace[i].GetAllAuthorsId()
-			for j := range authorsIds {
-				author := &Author{}
-				err := db.Debug().Model(&Author{}).Where("id = ?", authorsIds[j]).First(author).Error
-				if err != nil {
-					return &[]Workspace{}, err
-				}
-				workspace[i].Authors = append(workspace[i].Authors, author)
-			}
-		}
-	}
-	return &workspace, nil
+// func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
+// 	workspace := []Workspace{}
+// 	err := db.Debug().Model(&Workspace{}).Limit(100).Find(&workspace).Error
+// 	if err != nil {
+// 		return &[]Workspace{}, err
+// 	}
+// 	if len(workspace) > 0 {
+// 		for i := range workspace {
+// 			authorsIds := workspace[i].GetAllAuthorsId()
+// 			for j := range authorsIds {
+// 				author := &Author{}
+// 				err := db.Debug().Model(&Author{}).Where("id = ?", authorsIds[j]).First(author).Error
+// 				if err != nil {
+// 					return &[]Workspace{}, err
+// 				}
+// 				workspace[i].Authors = append(workspace[i].Authors, author)
+// 			}
+// 		}
+// 	}
+// 	return &workspace, nil
 
+// }
+
+// func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*Workspace, error) {
+// 	err := db.Debug().Model(&Author{}).Where("id = ?", aid).Take(&w.Authors).Error
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+
+// 	err = db.Debug().Model(&Workspace{}).Where("id = ?", w.ID).Updates(Workspace{Name: w.Name, Description: w.Description, Status: w.Status, UpdatedAt: time.Now()}).Error
+// 	if err != nil {
+// 		return &Workspace{}, err
+// 	}
+// 	// err = db.Debug().Save(&w).Error
+// 	// if err != nil {
+// 	// 	log.Fatalf("error to save: %v", err)
+// 	// }
+// 	return w, nil
+// }
+
+
+func (w *Workspace) AddAuthorToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*Workspace, error) {
+
+    // find workspace by id
+    var existingWorkspace Workspace
+    if err := db.First(&existingWorkspace, wid).Error; err != nil {
+        return nil, err
+    }
+
+    // find author by id
+    var existingAuthor Author
+    if err := db.First(&existingAuthor, aid).Error; err != nil {
+        return nil, err
+    }
+
+    // append author to workspace
+    if err := db.Model(&existingWorkspace).Association("Authors").Append(&existingAuthor); err != nil {
+        return nil, err
+    }
+
+    return &existingWorkspace, nil
 }
 
-func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, aid uint32) error {
-	err := db.Debug().Model(&Author{}).Where("id = ?", aid).Take(&w.Authors).Error
-	if err != nil {
-		return err
-	}
-	// err = db.Debug().Save(&w).Error
-	// if err != nil {
-	// 	log.Fatalf("error to save: %v", err)
-	// }
-	return nil
-}
+// func (w *Workspace) AddAuthorsToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*Workspace, error) {
+// 	err := db.Debug().Model(&Author{}).Where("id = ?", aid).Take(&w.Authors).Error
+// 	err = db.Debug().Model(Workspace{}).
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	// err = db.Debug().Save(&w).Error
+// 	// if err != nil {
+// 	// 	log.Fatalf("error to save: %v", err)
+// 	// }
+// 	return w, nil
+// }
 
-func (w *Workspace) FindWorkspaceByID(db *gorm.DB, pid uint64) (*Workspace, error) {
-	err := db.Debug().Model(&Workspace{}).Where("id = ?", pid).Take(&w).Error
+
+func (w *Workspace) FindWorkspaceByID(db *gorm.DB, wid uint64) (*Workspace, error) {
+	fmt.Println("in FindWorkspaceByID")
+	err := db.Debug().Model(&Workspace{}).Preload("Authors").Where("id = ?", wid).Take(&w).Error
 	if err != nil {
 		return &Workspace{}, err
 	}
-	// if t.ID != 0 {
-	// 	err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
-	// 	if err != nil {
-	// 		return &Task{}, err
-	// 	}
-	// }
+
 	return w, nil
 }
 

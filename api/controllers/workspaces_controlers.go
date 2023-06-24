@@ -36,7 +36,7 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-	err = workspace.AddAuthorsToWorkspace(server.DB, aid)
+	_, err = workspace.AddAuthorToWorkspace(server.DB, aid, uint32(workspace.ID))
 	if err != nil {
 		return c.JSON(http.StatusFailedDependency, err)
 	}
@@ -70,34 +70,6 @@ func (server *Server) GetWorkspacesByAuthorId(c echo.Context) error {
 	return c.JSON(http.StatusOK, workspaces)
 }
 
-func (server *Server) TestHandler(c echo.Context) error {
-
-	workspace := models.Workspace{}
-
-	workspaces, err := workspace.FindAllWorkspacesTest(server.DB)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	return c.JSON(http.StatusOK, workspaces)
-
-}
-
-func (server *Server) GetWorkspace(c echo.Context) error {
-
-	wid, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	workspace := models.Workspace{}
-
-	postReceived, err := workspace.FindWorkspaceByID(server.DB, uint64(wid))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
-	}
-	return c.JSON(http.StatusOK, postReceived)
-}
-
-
 func (server *Server) GetWorkspaces(c echo.Context) error {
 
 	workspace := models.Workspace{}
@@ -107,12 +79,50 @@ func (server *Server) GetWorkspaces(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, workspaces)
+
 }
+
+func (server *Server) GetWorkspace(c echo.Context) error {
+	fmt.Println("out FindWorkspaceByID")
+	wid, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	workspace := models.Workspace{}
+
+	workspaceReceived, err := workspace.FindWorkspaceByID(server.DB, uint64(wid))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, workspaceReceived)
+}
+
+func (server *Server) AddOneMoreAuthorToWorkspace(c echo.Context) error {
+	
+	wid, err := strconv.Atoi(c.Param("id"))
+	fmt.Println("wid", wid)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	aid, err := strconv.Atoi(c.FormValue("aid"))
+	fmt.Println("aid", aid)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	workspace := models.Workspace{}
+
+	workspacePlusOneAuthor, err := workspace.AddAuthorToWorkspace(server.DB, uint32(aid), uint32(wid))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, workspacePlusOneAuthor)
+}
+
 
 func (server *Server) UpdateWorkspace(c echo.Context) error {
 
-	// Check if the post id is valid
-	pid, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	// Check if the workspace id is valid
+	wid, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -123,9 +133,9 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	// Check if the post exist
+	// Check if the workspace exist
 	workspace := models.Workspace{}
-	err = server.DB.Debug().Model(models.Workspace{}).Where("id = ?", pid).Take(&workspace).Error
+	err = server.DB.Debug().Model(models.Workspace{}).Where("id = ?", wid).Take(&workspace).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, errors.New("post not found"))
 	}

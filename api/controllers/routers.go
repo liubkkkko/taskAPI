@@ -42,9 +42,9 @@ func (s *Server) initializeRoutes() {
 
 
 	//Workspace routes
-	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication)
-	s.Router.GET("/workspces", s.GetWorkspaces)
-	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId)
-	s.Router.GET("/workspces1", s.TestHandler) //in the feauture this rout will replace GetWorkspaces 
-
+	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication) //working
+	s.Router.GET("/workspces", s.GetWorkspaces) //working
+	s.Router.GET("/workspace/:id", s.GetWorkspace) //working
+	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId) //working
+	s.Router.PUT("/workspaces/:id", s.AddOneMoreAuthorToWorkspace) 
 }
