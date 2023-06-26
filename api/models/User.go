@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
-	"gorm.io/gorm"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -115,7 +115,7 @@ func (u *User) FindUserByID(db *gorm.DB, uid uint32) (*User, error) {
 	if err != nil {
 		return &User{}, err
 	}
-	if errors.Is(db.Error, gorm.ErrRecordNotFound){
+	if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 		return &User{}, errors.New("User Not Found")
 	}
 	return u, err
@@ -130,9 +130,9 @@ func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
 	}
 	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).UpdateColumns(
 		map[string]interface{}{
-			"password":  u.Password,
-			"nickname":  u.Nickname,
-			"email":     u.Email,
+			"password":   u.Password,
+			"nickname":   u.Nickname,
+			"email":      u.Email,
 			"updated_at": time.Now(),
 		},
 	)
@@ -148,9 +148,10 @@ func (u *User) UpdateAUser(db *gorm.DB, uid uint32) (*User, error) {
 }
 
 func (u *User) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
+	db.Debug().Model(&Post{}).Where("author_id = ?", uid).Delete(&Post{})
+	db.Debug().Model(&Task{}).Where("author_id = ?", uid).Delete(&Task{})
 
 	db = db.Debug().Model(&User{}).Where("id = ?", uid).Take(&User{}).Delete(&User{})
-
 	if db.Error != nil {
 		return 0, db.Error
 	}

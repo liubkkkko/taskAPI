@@ -46,5 +46,11 @@ func (s *Server) initializeRoutes() {
 	s.Router.GET("/workspces", s.GetWorkspaces) //working
 	s.Router.GET("/workspace/:id", s.GetWorkspace) //working
 	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId) //working
-	s.Router.PUT("/workspaces/:id", s.AddOneMoreAuthorToWorkspace) 
+	s.Router.PUT("/workspace/:id", s.AddOneMoreAuthorToWorkspace) //working
+	s.Router.PUT("/workspaces/:id", s.UpdateWorkspace) //
+	s.Router.DELETE("/workspaces/:id", s.DeleteWorkspace, middlewares.SetMiddlewareAuthentication) //working (only if you try to delete own workspace)
+	s.Router.GET("/workspace", s.CheckIfIAuthor)
+
+	//Task routes
+
 }

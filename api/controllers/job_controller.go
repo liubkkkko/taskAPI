@@ -14,19 +14,19 @@ import (
 	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
 )
 
-func (server *Server) CreatePost(c echo.Context) error {
+func (server *Server) CreateJob(c echo.Context) error {
 
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	post := models.Post{}
-	err = json.Unmarshal(body, &post)
+	job := models.Job{}
+	err = json.Unmarshal(body, &job)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	post.Prepare()
-	err = post.Validate()
+	job.Prepare()
+	err = job.Validate()
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -34,10 +34,10 @@ func (server *Server) CreatePost(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-	if uid != post.AuthorID || uid == post.Author.ID {
+	if uid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
-	postCreated, err := post.SavePost(server.DB)
+	postCreated, err := job.SaveJob(server.DB)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
@@ -46,36 +46,36 @@ func (server *Server) CreatePost(c echo.Context) error {
 	return c.JSON(http.StatusCreated, postCreated)
 }
 
-func (server *Server) GetPosts(c echo.Context) error {
+func (server *Server) GetJobs(c echo.Context) error {
 
-	post := models.Post{}
+	jobs := models.Job{}
 
-	posts, err := post.FindAllPosts(server.DB)
+	tasks, err := jobs.FindAllJob(server.DB)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, posts)
+	return c.JSON(http.StatusOK, tasks)
 }
 
-func (server *Server) GetPost(c echo.Context) error {
+func (server *Server) GetJob(c echo.Context) error {
 
-	pid, err := strconv.Atoi(c.Param("id"))
+	tid, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	post := models.Post{}
+	job := models.Job{}
 
-	postReceived, err := post.FindPostByID(server.DB, uint64(pid))
+	taskReceived, err := job.FindJobByID(server.DB, uint64(tid))
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, postReceived)
+	return c.JSON(http.StatusOK, taskReceived)
 }
 
-func (server *Server) UpdatePost(c echo.Context) error {
+func (server *Server) UpdateJob(c echo.Context) error {
 
-	// Check if the post id is valid
-	pid, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	// Check if the task id is valid
+	tId, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -86,15 +86,15 @@ func (server *Server) UpdatePost(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	// Check if the post exist
-	post := models.Post{}
-	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", pid).Take(&post).Error
+	// Check if the task exist
+	job := models.Job{}
+	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", tId).Take(&job).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, errors.New("post not found"))
 	}
 
 	// If a user attempt to update a post not belonging to him
-	if uid != post.AuthorID {
+	if uid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 	// Read the data posted
@@ -104,38 +104,38 @@ func (server *Server) UpdatePost(c echo.Context) error {
 	}
 
 	// Start processing the request data
-	postUpdate := models.Post{}
-	err = json.Unmarshal(body, &postUpdate)
+	jobUpdate := models.Job{}
+	err = json.Unmarshal(body, &jobUpdate)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	fmt.Println(postUpdate.AuthorID)
+
 	//Also check if the request user id is equal to the one gotten from token
-	if uid != postUpdate.AuthorID {
+	if uid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
 
-	postUpdate.Prepare()
-	err = postUpdate.Validate()
+	jobUpdate.Prepare()
+	err = jobUpdate.Validate()
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	postUpdate.ID = post.ID //this is important to tell the model the post id to update, the other update field are set above
+	jobUpdate.ID = job.ID //this is important to tell the model the post id to update, the other update field are set above
 
-	postUpdated, err := postUpdate.UpdateAPost(server.DB)
+	jobUpdated, err := jobUpdate.UpdateAJob(server.DB)
 
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	return c.JSON(http.StatusOK, postUpdated)
+	return c.JSON(http.StatusOK, jobUpdated)
 }
 
-func (server *Server) DeletePost(c echo.Context) error {
+func (server *Server) DeleteJob(c echo.Context) error {
 
-	// Is a valid post id given to us?
-	pid, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	// Is a valid task id given to us?
+	tid, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -146,21 +146,23 @@ func (server *Server) DeletePost(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	// Check if the post exist
-	post := models.Post{}
-	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", pid).Take(&post).Error
+	
+
+	// Check if the task exist
+	job := models.Job{}
+	err = server.DB.Debug().Model(models.Job{}).Where("id = ?", tid).Take(&job).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, errors.New("Unauthorized"))
 	}
 
-	// Is the authenticated user, the owner of this post?
-	if uid != post.AuthorID {
+	// Is the authenticated user, the owner of this task?
+	if uid != uint32(job.AuthorID){
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
-	_, err = post.DeleteAPost(server.DB, pid, uid)
+	_, err = job.DeleteAJob(server.DB, tid, uid)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	c.Response().Header().Set("Entity", fmt.Sprintf("%d", pid))
+	c.Response().Header().Set("Entity", fmt.Sprintf("%d", tid))
 	return c.JSON(http.StatusNoContent, "")
 }
