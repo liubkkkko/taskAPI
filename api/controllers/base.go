@@ -5,13 +5,12 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
-
-	"github.com/liubkkkko/firstAPI/api/models"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type Server struct {
@@ -21,8 +20,9 @@ type Server struct {
 
 func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, DbName string) {
 	var err error
+
 	DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
-	server.DB, err = gorm.Open(Dbdriver, DBURL)
+	server.DB, err = gorm.Open(postgres.Open(DBURL), &gorm.Config{})
 	if err != nil {
 		fmt.Printf("Cannot connect to %s database", Dbdriver)
 		log.Fatal("This is the error:", err)
@@ -30,10 +30,13 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		fmt.Printf("We are connected to the %s database", Dbdriver)
 	}
 
-	server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}) //database migration
+	//database migration
+	// server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{})
 
+	//create new instance router
 	server.Router = echo.New()
 
+	//initialize logger
 	logger, _ := zap.NewProduction()
 	server.Router.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogURI:    true,
@@ -43,11 +46,10 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 				zap.String("URI", v.URI),
 				zap.Int("status", v.Status),
 			)
-
 			return nil
 		},
 	}))
-	
+
 	server.initializeRoutes()
 }
 

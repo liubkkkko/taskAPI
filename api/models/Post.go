@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 type Post struct {
@@ -112,7 +112,7 @@ func (p *Post) DeleteAPost(db *gorm.DB, pid uint64, uid uint32) (int64, error) {
 	db = db.Debug().Model(&Post{}).Where("id = ? and author_id = ?", pid, uid).Take(&Post{}).Delete(&Post{})
 
 	if db.Error != nil {
-		if gorm.IsRecordNotFoundError(db.Error) {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			return 0, errors.New("Post not found")
 		}
 		return 0, db.Error

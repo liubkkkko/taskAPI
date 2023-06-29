@@ -123,13 +123,13 @@ func (server *Server) UpdateTask(c echo.Context) error {
 
 	taskUpdate.ID = task.ID //this is important to tell the model the post id to update, the other update field are set above
 
-	postUpdated, err := taskUpdate.UpdateATask(server.DB)
+	taskUpdated, err := taskUpdate.UpdateATask(server.DB)
 
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	return c.JSON(http.StatusOK, postUpdated)
+	return c.JSON(http.StatusOK, taskUpdated)
 }
 
 func (server *Server) DeleteTask(c echo.Context) error {

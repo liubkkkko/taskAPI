@@ -1,12 +1,13 @@
 package models
 
 import (
+	"errors"
 	"html"
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"gorm.io/gorm"
 )
 
 type Task struct {
@@ -117,7 +118,7 @@ func (t *Task) DeleteATask(db *gorm.DB, tid uint64, uid uint32) (int64, error) {
 	db = db.Debug().Model(&Task{}).Where("id = ? and author_id = ?", tid, uid).Take(&Task{}).Delete(&Task{})
 
 	if db.Error != nil {
-		if gorm.IsRecordNotFoundError(db.Error) {
+		if errors.Is(db.Error, gorm.ErrRecordNotFound) {
 			return 0, echo.NewHTTPError(404, "Task not found")
 		}
 		return 0, db.Error
