@@ -130,7 +130,7 @@ func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) (error) {
 
 
 func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
-	err := db.Debug().Model(Author{}).Where("id = ?", uid).Take(&a).Error
+	err := db.Debug().Model(Author{}).Preload("Workspaces").Preload("Jobs").Where("id = ?", uid).Take(&a).Error
 	if err != nil {
 		return &Author{}, err
 	}

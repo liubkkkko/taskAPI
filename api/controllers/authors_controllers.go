@@ -68,23 +68,19 @@ func (server *Server) UpdateAuthor(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	fmt.Println(id)
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	fmt.Println(body)
 	author := models.Author{}
 	err = json.Unmarshal(body, &author)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	fmt.Println(author)
 	tokenID, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
-	fmt.Println(tokenID)
 	if tokenID != uint32(id) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
@@ -93,13 +89,11 @@ func (server *Server) UpdateAuthor(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	fmt.Println(author)
 	updatedAuthor, err := author.UpdateAuthors(server.DB, uint32(id))
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	fmt.Println(updatedAuthor)
 	return c.JSON(http.StatusOK, updatedAuthor)
 }
 

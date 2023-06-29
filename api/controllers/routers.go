@@ -39,7 +39,9 @@ func (s *Server) initializeRoutes() {
 	//Author routes
 	s.Router.POST("/authors", s.CreateAuthor, middlewares.SetMiddlewareAuthentication) //working
 	s.Router.GET("/authors", s.GetAuthors)    //working
-
+	s.Router.GET("/author/:id", s.GetAuthor)  //working
+	s.Router.PUT("/authors/:id", s.UpdateAuthor, middlewares.SetMiddlewareAuthentication)  //working
+	s.Router.DELETE("/authors/:id", s.DeleteAuthor, middlewares.SetMiddlewareAuthentication)  //working
 
 	//Workspace routes
 	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication) //working
@@ -47,10 +49,11 @@ func (s *Server) initializeRoutes() {
 	s.Router.GET("/workspace/:id", s.GetWorkspace) //working
 	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId) //working
 	s.Router.PUT("/workspace/:id", s.AddOneMoreAuthorToWorkspace) //working
-	s.Router.PUT("/workspaces/:id", s.UpdateWorkspace) //
+	s.Router.PUT("/workspaces/:id", s.UpdateWorkspace) //working
 	s.Router.DELETE("/workspaces/:id", s.DeleteWorkspace, middlewares.SetMiddlewareAuthentication) //working (only if you try to delete own workspace)
 	s.Router.GET("/workspace", s.CheckIfIAuthor)
 
-	//Task routes
-
+	//Job routes
+	s.Router.POST("/jobs", s.CreateJob, middlewares.SetMiddlewareAuthentication) //need test
+	s.Router.GET("/jobs", s.GetJobs) //need test
 }
