@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/badoux/checkmail"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -16,22 +17,22 @@ type Author struct {
 	Nickname   string       `gorm:"column:nickname;size:255;not null;" json:"nickname"`
 	Email      string       `gorm:"column:email;size:100;not null;" json:"email"`
 	Password   string       `gorm:"column:password;size:100;not null;" json:"password"`
-	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"`//in the feauture add interface to swich role
+	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feauture add interface to swich role
 	Jobs       []Job        `gorm:"foreignKey:author_id"`
 	Workspaces []*Workspace `gorm:"many2many:author_workspace;"`
 	CreatedAt  time.Time    `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
 	UpdatedAt  time.Time    `gorm:"default:CURRENT_TIMESTAMP" json:"updated_at"`
 }
 
-// func Hash(password string) ([]byte, error) {
-// 	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-// }
+func Hash(password string) ([]byte, error) {
+	return bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+}
 
-// func VerifyPassword(hashedPassword, password string) error {
-// 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-// }
+func VerifyPassword(hashedPassword, password string) error {
+	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+}
 
-func (a *Author) BeforeSave1() error {
+func (a *Author) BeforeSave() error {
 	hashedPassword, err := Hash(a.Password)
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func (a *Author) FindAllAuthors(db *gorm.DB) (*[]Author, error) {
 	return &authors, err
 }
 
-func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) (error) {
+func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) error {
 	err := db.Debug().Model(&Author{}).Where("id = ?", aid).First(a).Error
 	if err != nil {
 		return err
@@ -127,15 +128,13 @@ func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) (error) {
 	return nil
 }
 
-
-
 func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 	err := db.Debug().Model(Author{}).Preload("Workspaces").Preload("Jobs").Where("id = ?", uid).Take(&a).Error
 	if err != nil {
 		return &Author{}, err
 	}
 	if errors.Is(db.Error, gorm.ErrRecordNotFound) {
-		return &Author{}, errors.New("User Not Found")
+		return &Author{}, errors.New("user Not Found")
 	}
 	return a, err
 }
@@ -143,7 +142,7 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
 
 	// To hash the password
-	err := a.BeforeSave1()
+	err := a.BeforeSave()
 	if err != nil {
 		log.Fatal(err)
 	}
