@@ -26,8 +26,6 @@ func (j *Job) Prepare() {
 	j.Title = html.EscapeString(strings.TrimSpace(j.Title))
 	j.Content = html.EscapeString(strings.TrimSpace(j.Content))
 	j.Status = html.EscapeString(strings.TrimSpace(j.Status))
-	j.AuthorID = 0
-	j.WorkspaceID = 0
 	j.CreatedAt = time.Now()
 	j.UpdatedAt = time.Now()
 }
@@ -53,7 +51,7 @@ func (j *Job) Validate() error {
 }
 
 func (j *Job) SaveJob(db *gorm.DB) (*Job, error) {
-	err := db.Debug().Model(&Post{}).Create(&j).Error
+	err := db.Debug().Model(&Job{}).Create(&j).Error
 	if err != nil {
 		return &Job{}, err
 	}
@@ -67,24 +65,18 @@ func (j *Job) SaveJob(db *gorm.DB) (*Job, error) {
 }
 
 func (j *Job) FindAllJob(db *gorm.DB) (*[]Job, error) {
+
 	jobs := []Job{}
-	err := db.Debug().Model(&Post{}).Limit(100).Find(&j).Error
+	err := db.Debug().Limit(100).Find(&jobs).Error
 	if err != nil {
 		return &[]Job{}, err
 	}
-	// if len(jobs) > 0 {
-	// 	for i := range jobs {
-	// 		err := db.Debug().Model(&User{}).Where("id = ?", tasks[i].AuthorID).Take(&tasks[i].Author).Error
-	// 		if err != nil {
-	// 			return &[]Task{}, err
-	// 		}
-	// 	}
-	// }
 	return &jobs, nil
 }
+	
 
 func (j *Job) FindJobByID(db *gorm.DB, jid uint64) (*Job, error) {
-	err := db.Debug().Model(&Task{}).Where("id = ?", jid).Take(&j).Error
+	err := db.Debug().Model(&Job{}).Where("id = ?", jid).Take(&j).Error
 	if err != nil {
 		return &Job{}, err
 	}

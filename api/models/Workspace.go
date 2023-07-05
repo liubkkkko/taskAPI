@@ -106,13 +106,11 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 }
 
 func (w *Workspace) AddAuthorToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*Workspace, error) {
-
 	// find author by id
 	var existingAuthor Author
 	if err := db.First(&existingAuthor, aid).Error; err != nil {
 		return nil, err
 	}
-
 	var existingWorkspace Workspace
 	if wid != 0 {
 		// find workspace by id
