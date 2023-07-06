@@ -73,7 +73,6 @@ func (j *Job) FindAllJob(db *gorm.DB) (*[]Job, error) {
 	}
 	return &jobs, nil
 }
-	
 
 func (j *Job) FindJobByID(db *gorm.DB, jid uint64) (*Job, error) {
 	err := db.Debug().Model(&Job{}).Where("id = ?", jid).Take(&j).Error

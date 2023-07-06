@@ -22,12 +22,16 @@ var authors = []models.Author{
 
 var jobs = []models.Job{
 	{
-		Title:   "Task1",
-		Content: "heh work",
+		Title:       "Task1",
+		Content:     "heh work",
+		AuthorID:    1,
+		WorkspaceID: 1,
 	},
 	{
-		Title:   "Task2",
-		Content: "heh workkk",
+		Title:       "Task2",
+		Content:     "heh workkk",
+		AuthorID:    2,
+		WorkspaceID: 2,
 	},
 }
 
@@ -73,12 +77,17 @@ func Load(db *gorm.DB) {
 			log.Fatalf("cannot seed authors table: %v", err)
 		}
 
+		// append author to workspace
+		if err := db.Debug().Model(&workspaces[i]).Association("Authors").Append(&authors[i]); err != nil {
+			log.Fatalf("cannot appened author to workspace: %v", err)
+		}
+
 		err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed jobs table: %v", err)
 		}
 
-		jobs[i].WorkspaceID = workspaces[i].ID
-		jobs[i].AuthorID = authors[i].ID
+		// jobs[i].WorkspaceID = workspaces[i].ID
+		// jobs[i].AuthorID = authors[i].ID
 	}
 }

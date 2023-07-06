@@ -136,7 +136,6 @@ func (server *Server) AddOneMoreAuthorToWorkspace(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	aid, err := strconv.Atoi(c.FormValue("aid"))
-	fmt.Println("aid", aid)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
