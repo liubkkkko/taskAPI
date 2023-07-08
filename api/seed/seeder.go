@@ -7,43 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var users = []models.User{
-	{
-		Nickname: "Steven victor",
-		Email:    "steven@gmail.com",
-		Password: "password",
-	},
-	{
-		Nickname: "Martin Luther",
-		Email:    "luther@gmail.com",
-		Password: "password",
-	},
-}
-
-var posts = []models.Post{
-	{
-		Title:   "Title 1",
-		Content: "Hello world 1",
-	},
-	{
-		Title:   "Title 2",
-		Content: "Hello world 2",
-	},
-}
-
-var tasks = []models.Task{
-	{
-		Title:   "Task 1",
-		Content: "Doing something interesting 1",
-		Status:  "Created",
-	},
-	{
-		Title:   "Task 2",
-		Content: "Doing something interesting 2",
-		Status:  "In proces",
-	},
-}
-
 var authors = []models.Author{
 	{
 		Nickname: "jinzhu",
@@ -59,12 +22,16 @@ var authors = []models.Author{
 
 var jobs = []models.Job{
 	{
-		Title:   "Task1",
-		Content: "heh work",
+		Title:       "Task1",
+		Content:     "heh work",
+		AuthorID:    1,
+		WorkspaceID: 1,
 	},
 	{
-		Title:   "Task2",
-		Content: "heh workkk",
+		Title:       "Task2",
+		Content:     "heh workkk",
+		AuthorID:    2,
+		WorkspaceID: 2,
 	},
 }
 
@@ -83,9 +50,6 @@ var workspaces = []models.Workspace{
 func Load(db *gorm.DB) {
 	var err error
 	if err = db.Debug().Migrator().DropTable(
-		&models.Post{},
-		&models.User{},
-		&models.Task{},
 		&models.Job{},
 		&models.Author{},
 		&models.Workspace{},
@@ -94,9 +58,6 @@ func Load(db *gorm.DB) {
 	}
 
 	if err = db.Debug().AutoMigrate(
-		&models.User{},
-		&models.Post{},
-		&models.Task{},
 		&models.Author{},
 		&models.Workspace{},
 		&models.Job{},
@@ -104,8 +65,7 @@ func Load(db *gorm.DB) {
 		log.Fatal("failed to drop table")
 	}
 
-
-	for i := range users {
+	for i := range authors {
 
 		err := db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
 		if err != nil {
@@ -117,33 +77,17 @@ func Load(db *gorm.DB) {
 			log.Fatalf("cannot seed authors table: %v", err)
 		}
 
+		// append author to workspace
+		if err := db.Debug().Model(&workspaces[i]).Association("Authors").Append(&authors[i]); err != nil {
+			log.Fatalf("cannot appened author to workspace: %v", err)
+		}
+
 		err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
 		if err != nil {
 			log.Fatalf("cannot seed jobs table: %v", err)
 		}
 
-		jobs[i].WorkspaceID = workspaces[i].ID
-		jobs[i].AuthorID = authors[i].ID
-
-		////////////////////////////////////////////////////////////////
-
-		err = db.Debug().Model(&models.User{}).Create(&users[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed users table: %v", err)
-		}
-
-		posts[i].AuthorID = users[i].ID
-
-		err = db.Debug().Model(&models.Post{}).Create(&posts[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed posts table: %v", err)
-		}
-
-		tasks[i].AuthorID = users[i].ID
-
-		err = db.Debug().Model(&models.Task{}).Create(&tasks[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed task table: %v", err)
-		}
+		// jobs[i].WorkspaceID = workspaces[i].ID
+		// jobs[i].AuthorID = authors[i].ID
 	}
 }

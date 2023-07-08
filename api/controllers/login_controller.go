@@ -16,49 +16,36 @@ func (server *Server) Login(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
-		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		// return echo.NewHTTPError(http.StatusUnprocessableEntity, "Please provide valid credentials")
-
 	}
-	user := models.User{}
-	err = json.Unmarshal(body, &user)
+	author := models.Author{}
+	err = json.Unmarshal(body, &author)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
-		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		// return
 	}
 
-	user.Prepare()
-	err = user.Validate("login")
+	author.Prepare()
+	err = author.Validate("login")
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
-		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, err)
-		// return
 	}
-	token, err := server.SignIn(user.Email, user.Password)
+	token, err := server.SignIn(author.Email, author.Password)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusUnprocessableEntity, formattedError)
-		// responses.ERROR(c.Response(), http.StatusUnprocessableEntity, formattedError)
-		// return
 	}
-	// responses.JSON(c.Response(), http.StatusOK, token)
 	return c.JSON(http.StatusOK, token)
 }
 
 func (server *Server) SignIn(email, password string) (string, error) {
+	author := models.Author{}
 
-	var err error
-
-	user := models.User{}
-
-	err = server.DB.Debug().Model(models.User{}).Where("email = ?", email).Take(&user).Error
+	err := server.DB.Debug().Model(models.Author{}).Where("email = ?", email).Take(&author).Error
 	if err != nil {
 		return "", err
 	}
-	err = models.VerifyPassword(user.Password, password)
+	err = models.VerifyPassword(author.Password, password)
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
 		return "", err
 	}
-	return auth.CreateToken(user.ID)
+	return auth.CreateToken(uint32(author.ID))
 }

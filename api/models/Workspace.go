@@ -89,7 +89,7 @@ func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
 
 func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
 	workspaces := []Workspace{}
-	err := db.Debug().Preload("Authors").Limit(100).Find(&workspaces).Error
+	err := db.Debug().Preload("Authors").Preload("Jobs").Limit(100).Find(&workspaces).Error
 	if err != nil {
 		return &[]Workspace{}, err
 	}
@@ -106,15 +106,13 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 }
 
 func (w *Workspace) AddAuthorToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*Workspace, error) {
-
 	// find author by id
 	var existingAuthor Author
 	if err := db.First(&existingAuthor, aid).Error; err != nil {
 		return nil, err
 	}
-
 	var existingWorkspace Workspace
-	if wid != 0 {
+	if wid != 0 { 
 		// find workspace by id
 		if err := db.Debug().First(&existingWorkspace, wid).Error; err != nil {
 			return nil, err
@@ -123,7 +121,7 @@ func (w *Workspace) AddAuthorToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*
 		if err := db.Debug().Model(&existingWorkspace).Association("Authors").Append(&existingAuthor); err != nil {
 			return nil, err
 		}
-	} else {
+	} else { //for create new workspace
 		err := db.Debug().Model(&Author{}).Where("id = ?", aid).Take(&w.Authors).Error
 		if err != nil {
 			return nil, err
@@ -150,7 +148,6 @@ func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
 }
 
 func (w *Workspace) DeleteAWorkspace(db *gorm.DB, wid uint64, aid uint32) (int64, error) {
-	// db.Select("Account").Delete(&users)
 	db = db.Debug().Model(&Workspace{}).Where("id = ?", wid).Take(&Workspace{}).Delete(&Workspace{})
 	if db.Error != nil {
 		if errors.Is(db.Error, gorm.ErrRecordNotFound) {

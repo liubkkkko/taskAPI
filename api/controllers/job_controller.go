@@ -30,31 +30,31 @@ func (server *Server) CreateJob(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	uid, err := auth.ExtractTokenID(c)
+	aid, err := auth.ExtractTokenID(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-	if uid != uint32(job.AuthorID) {
+	if aid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
-	postCreated, err := job.SaveJob(server.DB)
+	jobCreated, err := job.SaveJob(server.DB)
 	if err != nil {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, postCreated.ID))
-	return c.JSON(http.StatusCreated, postCreated)
+	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, jobCreated.ID))
+	return c.JSON(http.StatusCreated, jobCreated)
 }
 
 func (server *Server) GetJobs(c echo.Context) error {
 
-	jobs := models.Job{}
+	job := models.Job{}
 
-	tasks, err := jobs.FindAllJob(server.DB)
+	jobs, err := job.FindAllJob(server.DB)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	return c.JSON(http.StatusOK, tasks)
+	return c.JSON(http.StatusOK, jobs)
 }
 
 func (server *Server) GetJob(c echo.Context) error {
@@ -74,7 +74,7 @@ func (server *Server) GetJob(c echo.Context) error {
 
 func (server *Server) UpdateJob(c echo.Context) error {
 
-	// Check if the task id is valid
+	// Check if the job id is valid
 	tId, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -86,14 +86,14 @@ func (server *Server) UpdateJob(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 
-	// Check if the task exist
+	// Check if the job exist
 	job := models.Job{}
-	err = server.DB.Debug().Model(models.Post{}).Where("id = ?", tId).Take(&job).Error
+	err = server.DB.Debug().Model(models.Job{}).Where("id = ?", tId).Take(&job).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, errors.New("post not found"))
 	}
 
-	// If a user attempt to update a post not belonging to him
+	// If a user attempt to update a job not belonging to him
 	if uid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
@@ -121,7 +121,7 @@ func (server *Server) UpdateJob(c echo.Context) error {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
 
-	jobUpdate.ID = job.ID //this is important to tell the model the post id to update, the other update field are set above
+	jobUpdate.ID = job.ID //this is important to tell the model the job id to update, the other update field are set above
 
 	jobUpdated, err := jobUpdate.UpdateAJob(server.DB)
 
@@ -134,7 +134,7 @@ func (server *Server) UpdateJob(c echo.Context) error {
 
 func (server *Server) DeleteJob(c echo.Context) error {
 
-	// Is a valid task id given to us?
+	// Is a valid job id given to us?
 	tid, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -148,14 +148,14 @@ func (server *Server) DeleteJob(c echo.Context) error {
 
 	
 
-	// Check if the task exist
+	// Check if the job exist
 	job := models.Job{}
 	err = server.DB.Debug().Model(models.Job{}).Where("id = ?", tid).Take(&job).Error
 	if err != nil {
 		return c.JSON(http.StatusNotFound, errors.New("Unauthorized"))
 	}
 
-	// Is the authenticated user, the owner of this task?
+	// Is the authenticated user, the owner of this job?
 	if uid != uint32(job.AuthorID){
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
