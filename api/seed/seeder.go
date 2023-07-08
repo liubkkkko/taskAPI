@@ -50,6 +50,7 @@ var workspaces = []models.Workspace{
 func Load(db *gorm.DB) {
 	var err error
 	if err = db.Debug().Migrator().DropTable(
+		
 		&models.Job{},
 		&models.Author{},
 		&models.Workspace{},

@@ -14,8 +14,8 @@ import (
 
 type Author struct {
 	ID         uint64       `gorm:"column:id;primary_key;auto_increment" json:"id"`
-	Nickname   string       `gorm:"column:nickname;size:255;not null;" json:"nickname"`
-	Email      string       `gorm:"column:email;size:100;not null;" json:"email"`
+	Nickname   string       `gorm:"column:nickname;size:255;not null;unique;" json:"nickname"`
+	Email      string       `gorm:"column:email;size:100;not null;unique;" json:"email"`
 	Password   string       `gorm:"column:password;size:100;not null;" json:"password"`
 	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feauture add interface to swich role
 	Jobs       []Job        `gorm:"foreignKey:author_id"`
@@ -32,7 +32,7 @@ func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-func (a *Author) BeforeSave() error {
+func (a *Author) BeforeSave(db *gorm.DB) error {
 	hashedPassword, err := Hash(a.Password)
 	if err != nil {
 		return err
@@ -142,7 +142,7 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
 
 	// To hash the password
-	err := a.BeforeSave()
+	err := a.BeforeSave(db)
 	if err != nil {
 		log.Fatal(err)
 	}

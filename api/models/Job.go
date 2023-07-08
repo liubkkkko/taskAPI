@@ -55,14 +55,9 @@ func (j *Job) SaveJob(db *gorm.DB) (*Job, error) {
 	if err != nil {
 		return &Job{}, err
 	}
-	// if j.ID != 0 {
-	// 	err = db.Debug().Model(&Task{}).Where("id = ?", j.AuthorID).Take(&j.Author).Error
-	// 	if err != nil {
-	// 		return &Job{}, err
-	// 	}
-	// }
 	return j, nil
 }
+
 
 func (j *Job) FindAllJob(db *gorm.DB) (*[]Job, error) {
 

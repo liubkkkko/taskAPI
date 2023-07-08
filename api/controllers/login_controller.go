@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/models"
 	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func (server *Server) Login(c echo.Context) error {
@@ -43,9 +43,13 @@ func (server *Server) SignIn(email, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	//for test
+	fmt.Println("author password", author.Password, "password", password)
 	err = models.VerifyPassword(author.Password, password)
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		return "", err
+	if err != nil {
+		return "bad login data", err
 	}
 	return auth.CreateToken(uint32(author.ID))
 }
+
+//&& err == bcrypt.ErrMismatchedHashAndPassword

@@ -13,7 +13,7 @@ import (
 
 type Workspace struct {
 	ID          uint64    `gorm:"column:id;primary_key;auto_increment" json:"id"`
-	Name        string    `gorm:"column:name;size:255;not null;" json:"name"`
+	Name        string    `gorm:"column:name;size:255;not null;unique;" json:"name"`
 	Description string    `gorm:"column:description;size:255;not null;" json:"description"`
 	Status      string    `gorm:"column:status;size:100;not null;default:'created'" json:"status"`
 	Jobs        []Job     `gorm:"foreignKey:workspace_id;constraint:OnDelete:CASCADE;"`
@@ -48,18 +48,16 @@ func (w *Workspace) Validate() error {
 
 func (w *Workspace) GetAllAuthorsId() []uint64 {
 	authorIDs := make([]uint64, len(w.Authors))
-	fmt.Println("authorIDs", authorIDs)
 	for _, author := range w.Authors {
 		authorIDs = append(authorIDs, author.ID)
 	}
-	fmt.Println("authorIDs", authorIDs)
 	return authorIDs
 }
 
 func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
 	
 	if w.ID == 0 {
-		authorIDs := make([]uint64, len(w.Authors))
+		authorIDs := make([]uint64, len(w.Authors)) // create array IDs authors
 		for i, author := range w.Authors {
 			authorIDs[i] = author.ID
 		}
@@ -69,8 +67,7 @@ func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
 			}
 		}
 		return echo.ErrUnauthorized
-	}
-
+	}else{
 	var workspace Workspace
 	if err := db.Preload("Authors").First(&workspace, w.ID).Error; err != nil {
 		return err
@@ -85,6 +82,7 @@ func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
 		}
 	}
 	return echo.ErrUnauthorized
+}
 }
 
 func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
@@ -101,7 +99,6 @@ func (w *Workspace) SaveWorkspace(db *gorm.DB) (*Workspace, error) {
 	if err != nil {
 		return &Workspace{}, err
 	}
-	fmt.Println("After save workspace", w.Authors[0], w)
 	return w, nil
 }
 
@@ -140,7 +137,7 @@ func (w *Workspace) FindWorkspaceByID(db *gorm.DB, wid uint64) (*Workspace, erro
 }
 
 func (w *Workspace) UpdateWorkspace(db *gorm.DB) (*Workspace, error) {
-	err := db.Debug().Preload("Authors").Model(&Workspace{}).Where("id = ?", w.ID).Updates(Workspace{Name: w.Name, Description: w.Description, Status: w.Status, UpdatedAt: time.Now()}).Error
+	err := db.Debug().Model(&Workspace{}).Where("id = ?", w.ID).Updates(Workspace{Name: w.Name, Description: w.Description, Status: w.Status, UpdatedAt: time.Now()}).Error
 	if err != nil {
 		return &Workspace{}, err
 	}
