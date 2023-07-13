@@ -11,7 +11,7 @@ func (s *Server) initializeRoutes() {
 	s.Router.GET("/test", s.TestRout) // working
 
 	// Login Route
-	s.Router.POST("/login", s.Login)
+	s.Router.POST("/login", s.Login) //working
 
 	//Author routes
 	s.Router.POST("/authors", s.CreateAuthor) //working
@@ -28,7 +28,7 @@ func (s *Server) initializeRoutes() {
 	s.Router.PUT("/workspace/:id", s.AddOneMoreAuthorToWorkspace, middlewares.SetMiddlewareAuthentication) //working
 	s.Router.PUT("/workspaces/:id", s.UpdateWorkspace, middlewares.SetMiddlewareAuthentication) //working
 	s.Router.DELETE("/workspaces/:id", s.DeleteWorkspace, middlewares.SetMiddlewareAuthentication) //working (only if you try to delete own workspace)
-	s.Router.GET("/workspace", s.CheckIfIAuthor)
+	s.Router.GET("/workspace", s.CheckIfIAuthor) //working
 
 	//Job routes
 	s.Router.POST("/jobs", s.CreateJob, middlewares.SetMiddlewareAuthentication) //working

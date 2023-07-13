@@ -30,9 +30,6 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 		fmt.Printf("We are connected to the %s database", Dbdriver)
 	}
 
-	//database migration
-	// server.DB.Debug().AutoMigrate(&models.User{}, &models.Post{}, &models.Author{}, &models.Job{}, &models.Workspace{})
-
 	//create new instance router
 	server.Router = echo.New()
 

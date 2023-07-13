@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -22,7 +21,6 @@ func (server *Server) Login(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-
 	author.Prepare()
 	err = author.Validate("login")
 	if err != nil {
@@ -43,13 +41,9 @@ func (server *Server) SignIn(email, password string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	//for test
-	fmt.Println("author password", author.Password, "password", password)
 	err = models.VerifyPassword(author.Password, password)
 	if err != nil {
 		return "bad login data", err
 	}
 	return auth.CreateToken(uint32(author.ID))
 }
-
-//&& err == bcrypt.ErrMismatchedHashAndPassword
