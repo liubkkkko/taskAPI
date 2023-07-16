@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/go-redis/redis/v8"
 	_ "github.com/jinzhu/gorm/dialects/postgres" //postgres database driver
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,13 +16,15 @@ import (
 )
 
 type Server struct {
-	DB     *gorm.DB
-	Router *echo.Echo
+	DB          *gorm.DB
+	Router      *echo.Echo
+	redisClient *redis.Client
 }
 
-func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, DbName string) {
+func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, DbName, RedisAddr, RedisPassword string, RedisDb int) {
+	
+	//connect to postgres
 	var err error
-
 	DBURL := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", DbHost, DbPort, DbUser, DbName, DbPassword)
 	server.DB, err = gorm.Open(postgres.Open(DBURL), &gorm.Config{})
 	if err != nil {
@@ -32,6 +36,20 @@ func (server *Server) Initialize(Dbdriver, DbUser, DbPassword, DbPort, DbHost, D
 
 	//create new instance router
 	server.Router = echo.New()
+
+	//connect to redis
+	server.redisClient = redis.NewClient(&redis.Options{
+		Addr:     RedisAddr,
+		Password: RedisPassword,
+		DB:       RedisDb,
+	})
+
+	// Check connect to Redis
+	pong, err := server.redisClient.Ping(context.Background()).Result()
+	if err != nil {
+		log.Fatalf("Failed to connect to Redis: %s", err)
+	}
+	fmt.Printf("Connected to Redis: %s\n", pong)
 
 	//initialize logger
 	logger, _ := zap.NewProduction()

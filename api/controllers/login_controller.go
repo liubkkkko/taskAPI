@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
@@ -47,3 +50,25 @@ func (server *Server) SignIn(email, password string) (string, error) {
 	}
 	return auth.CreateToken(uint32(author.ID))
 }
+
+func (server *Server) Logout(c echo.Context) error {
+	token := auth.ExtractToken(c)
+	fmt.Println(token)
+	userID, err := auth.ExtractTokenID(c)
+	if err != nil {
+		return err
+	}
+	fmt.Println(userID)
+	ctx := context.Background()
+
+	// Зберігаємо токен у Redis з тимчасовою дією (наприклад, на 24 години)
+	err = server.redisClient.Set(ctx, token, userID, time.Hour*24).Err()
+	if err != nil {
+		return err
+	}
+
+
+	
+	return nil
+}
+

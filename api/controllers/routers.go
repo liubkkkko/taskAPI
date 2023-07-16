@@ -12,6 +12,7 @@ func (s *Server) initializeRoutes() {
 
 	// Login Route
 	s.Router.POST("/login", s.Login) //working
+	s.Router.POST("/logout", s.Logout) //working
 
 	//Author routes
 	s.Router.POST("/authors", s.CreateAuthor) //working

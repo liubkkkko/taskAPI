@@ -87,8 +87,5 @@ func Load(db *gorm.DB) {
 		if err != nil {
 			log.Fatalf("cannot seed jobs table: %v", err)
 		}
-
-		// jobs[i].WorkspaceID = workspaces[i].ID
-		// jobs[i].AuthorID = authors[i].ID
 	}
 }
