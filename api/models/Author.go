@@ -139,6 +139,17 @@ func (a *Author) FindAuthorsByID(db *gorm.DB, uid uint32) (*Author, error) {
 	return a, err
 }
 
+func (a *Author) FindAuthorsByEmail(db *gorm.DB, email string) (*Author, error) {
+	err := db.Debug().Model(Author{}).Where("email = ?", email).Take(&a).Error
+	if err != nil {
+		return &Author{}, err
+	}
+	if errors.Is(db.Error, gorm.ErrRecordNotFound) {
+		return &Author{}, errors.New("user Not Found")
+	}
+	return a, err
+}
+
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
 
 	// To hash the password
