@@ -49,43 +49,56 @@ var workspaces = []models.Workspace{
 
 func Load(db *gorm.DB) {
 	var err error
-	if err = db.Debug().Migrator().DropTable(
-		
-		&models.Job{},
-		&models.Author{},
-		&models.Workspace{},
-	); err != nil {
-		log.Fatal("failed to drop table")
-	}
 
+	// Міграція таблиць
 	if err = db.Debug().AutoMigrate(
 		&models.Author{},
 		&models.Workspace{},
 		&models.Job{},
 	); err != nil {
-		log.Fatal("failed to drop table")
+		log.Fatal("failed to migrate tables")
 	}
 
-	for i := range authors {
+	// Перевірка, чи існують дані в таблицях
+	var authorsCount int64
+	if err = db.Model(&models.Author{}).Count(&authorsCount).Error; err != nil {
+		log.Fatalf("failed to check authors table: %v", err)
+	}
 
-		err := db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed workspace table: %v", err)
-		}
+	var workspacesCount int64
+	if err = db.Model(&models.Workspace{}).Count(&workspacesCount).Error; err != nil {
+		log.Fatalf("failed to check workspaces table: %v", err)
+	}
 
-		err = db.Debug().Model(&models.Author{}).Create(&authors[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed authors table: %v", err)
-		}
+	var jobsCount int64
+	if err = db.Model(&models.Job{}).Count(&jobsCount).Error; err != nil {
+		log.Fatalf("failed to check jobs table: %v", err)
+	}
 
-		// append author to workspace
-		if err := db.Debug().Model(&workspaces[i]).Association("Authors").Append(&authors[i]); err != nil {
-			log.Fatalf("cannot appened author to workspace: %v", err)
-		}
+	// If we dont have data - start to seed
+	if authorsCount == 0 && workspacesCount == 0 && jobsCount == 0 {
+		for i := range authors {
+			err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error
+			if err != nil {
+				log.Fatalf("cannot seed workspace table: %v", err)
+			}
 
-		err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
-		if err != nil {
-			log.Fatalf("cannot seed jobs table: %v", err)
+			err = db.Debug().Model(&models.Author{}).Create(&authors[i]).Error
+			if err != nil {
+				log.Fatalf("cannot seed authors table: %v", err)
+			}
+
+			// append author to workspace
+			if err := db.Debug().Model(&workspaces[i]).Association("Authors").Append(&authors[i]); err != nil {
+				log.Fatalf("cannot append author to workspace: %v", err)
+			}
+
+			err = db.Debug().Model(&models.Job{}).Create(&jobs[i]).Error
+			if err != nil {
+				log.Fatalf("cannot seed jobs table: %v", err)
+			}
 		}
+	} else {
+		log.Println("Skipping data seeding, tables already have data.")
 	}
 }
