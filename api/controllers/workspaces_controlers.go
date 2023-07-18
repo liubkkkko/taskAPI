@@ -40,9 +40,6 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusFailedDependency, err)
 	}
-	fmt.Println(workspace)
-	fmt.Println(workspace.Authors)
-	fmt.Println(workspace.ID)
 	err = workspace.CheckIfYouAuthor(server.DB, uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
@@ -75,13 +72,11 @@ func (server *Server) GetWorkspacesByAuthorId(c echo.Context) error {
 
 func (server *Server) CheckIfIAuthor(c echo.Context) error {
 	wid, err := strconv.Atoi(c.FormValue("wid"))
-	fmt.Println("wid", wid)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
 	aid, err := strconv.Atoi(c.FormValue("aid"))
-	fmt.Println("aid", aid)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -114,7 +109,6 @@ func (server *Server) GetWorkspaces(c echo.Context) error {
 }
 
 func (server *Server) GetWorkspace(c echo.Context) error {
-	fmt.Println("out FindWorkspaceByID")
 	wid, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -131,7 +125,6 @@ func (server *Server) GetWorkspace(c echo.Context) error {
 func (server *Server) AddOneMoreAuthorToWorkspace(c echo.Context) error {
 
 	wid, err := strconv.Atoi(c.Param("id"))
-	fmt.Println("wid", wid)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -173,7 +166,7 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	err = workspace.CheckIfYouAuthor(server.DB, uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	}
+		}
 	
 	// Read the data posted
 	body, err := ioutil.ReadAll(c.Request().Body)
@@ -187,19 +180,12 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	
-	//Also check if the request user id is equal to the one gotten from token
-	// err = workspaceUpdate.CheckIfYouAuthor(server.DB, uint64(aid))
-	// if err != nil {
-	// 	return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
-	// }
 
 	workspaceUpdate.Prepare()
 	err = workspaceUpdate.Validate()
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	fmt.Println(4)
 	workspaceUpdate.ID = workspace.ID //this is important to tell the model the workspace id to update, the other update field are set above
 
 	workspaceUpdated, err := workspaceUpdate.UpdateWorkspace(server.DB)

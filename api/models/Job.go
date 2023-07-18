@@ -55,14 +55,9 @@ func (j *Job) SaveJob(db *gorm.DB) (*Job, error) {
 	if err != nil {
 		return &Job{}, err
 	}
-	// if j.ID != 0 {
-	// 	err = db.Debug().Model(&Task{}).Where("id = ?", j.AuthorID).Take(&j.Author).Error
-	// 	if err != nil {
-	// 		return &Job{}, err
-	// 	}
-	// }
 	return j, nil
 }
+
 
 func (j *Job) FindAllJob(db *gorm.DB) (*[]Job, error) {
 
@@ -79,12 +74,6 @@ func (j *Job) FindJobByID(db *gorm.DB, jid uint64) (*Job, error) {
 	if err != nil {
 		return &Job{}, err
 	}
-	// if t.ID != 0 {
-	// 	err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
-	// 	if err != nil {
-	// 		return &Task{}, err
-	// 	}
-	// }
 	return j, nil
 }
 
@@ -93,12 +82,6 @@ func (j *Job) UpdateAJob(db *gorm.DB) (*Job, error) {
 	if err != nil {
 		return &Job{}, err
 	}
-	// if t.ID != 0 {
-	// 	err = db.Debug().Model(&User{}).Where("id = ?", t.AuthorID).Take(&t.Author).Error
-	// 	if err != nil {
-	// 		return &Task{}, err
-	// 	}
-	// }
 	return j, nil
 }
 

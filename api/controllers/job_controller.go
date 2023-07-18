@@ -25,15 +25,17 @@ func (server *Server) CreateJob(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
+	aid, err := auth.ExtractTokenID(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
+	}
+	job.AuthorID = uint64(aid)
 	job.Prepare()
 	err = job.Validate()
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
-	aid, err := auth.ExtractTokenID(c)
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-	}
+
 	if aid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New(http.StatusText(http.StatusUnauthorized)))
 	}
@@ -145,8 +147,6 @@ func (server *Server) DeleteJob(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
-
-	
 
 	// Check if the job exist
 	job := models.Job{}

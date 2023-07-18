@@ -50,6 +50,7 @@ var workspaces = []models.Workspace{
 func Load(db *gorm.DB) {
 	var err error
 	if err = db.Debug().Migrator().DropTable(
+		
 		&models.Job{},
 		&models.Author{},
 		&models.Workspace{},
@@ -86,8 +87,5 @@ func Load(db *gorm.DB) {
 		if err != nil {
 			log.Fatalf("cannot seed jobs table: %v", err)
 		}
-
-		// jobs[i].WorkspaceID = workspaces[i].ID
-		// jobs[i].AuthorID = authors[i].ID
 	}
 }
