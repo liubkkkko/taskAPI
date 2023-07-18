@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 
 	"github.com/joho/godotenv"
 	"github.com/liubkkkko/firstAPI/api/controllers"
@@ -30,8 +29,10 @@ func Run() {
 		os.Getenv("DB_HOST"),
 		os.Getenv("DB_NAME"))
 
-	RedisDbInt, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
-	tokenstorage.RedisStart(os.Getenv("REDIS_ADDR"), os.Getenv("REDIS_PASSWORD"), RedisDbInt)
+	tokenstorage.RedisStart(
+		os.Getenv("REDIS_ADDR"),
+		os.Getenv("REDIS_PASSWORD"),
+		os.Getenv("REDIS_DB"))
 
 	seed.Load(server.DB)
 

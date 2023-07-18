@@ -4,17 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 
 	"github.com/go-redis/redis/v8"
 )
 
 var RedisClient *redis.Client
 
-func RedisStart(RedisAddr, RedisPassword string, RedisDb int ) {
+func RedisStart(RedisAddr, RedisPassword, RedisDb string) {
+	RedisDbInt, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr:     RedisAddr,
 		Password: RedisPassword,
-		DB:       RedisDb,
+		DB:       RedisDbInt,
 	})
 
 	// Check connect to Redis
