@@ -12,6 +12,7 @@ import (
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo/v4"
+	"github.com/liubkkkko/firstAPI/api/tokenstorage"
 )
 
 func CreateToken(user_id uint32) (string, error) {
@@ -26,6 +27,20 @@ func CreateToken(user_id uint32) (string, error) {
 
 func TokenValid(c echo.Context) error {
 	tokenString := ExtractToken(c)
+	tokenId, err := ExtractTokenID(c)
+	if err != nil {
+		return err
+	}
+	tokenIdString := strconv.Itoa(int(tokenId))
+	fmt.Println("tokenString", tokenString)
+	fmt.Println("tokenIdString", tokenIdString)
+
+	tokenExist, err := tokenstorage.CheckValueExists(tokenstorage.RedisClient, tokenIdString, tokenString)
+	if !tokenExist {
+		fmt.Println("I have err", tokenExist)
+		return err
+	}
+	fmt.Println("tokenExist", tokenExist)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

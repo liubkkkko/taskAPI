@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/responses"
+
 )
 
 func SetMiddlewareAuthentication(next echo.HandlerFunc) echo.HandlerFunc {
@@ -16,6 +17,7 @@ func SetMiddlewareAuthentication(next echo.HandlerFunc) echo.HandlerFunc {
 			responses.ERROR(c.Response(), http.StatusUnauthorized, errors.New("Unauthorized"))
 			return err
 		}
+
 		return next(c)
 	}
 }

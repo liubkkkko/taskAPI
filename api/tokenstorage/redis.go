@@ -27,3 +27,33 @@ func RedisStart(RedisAddr, RedisPassword, RedisDb string) {
 	}
 	fmt.Printf("Connected to Redis: %s\n", pong)
 }
+
+
+func CheckKeyExists(client *redis.Client, key string) (bool, error) {
+	ctx := context.Background()
+    // Виконати перевірку наявності ключа в Redis
+    result, err := client.Exists(ctx, key).Result()
+    if err != nil {
+        // Обробити помилку
+        return false, err
+    }
+
+    // Перевірка результату
+    return result == 1, nil
+}
+
+func CheckValueExists(client *redis.Client, key, value string) (bool, error) {
+    ctx := context.Background()
+
+    // Виконати пошук значення по ключу в Redis
+    val, err := client.Get(ctx, key).Result()
+    if err != nil {
+        // Обробити помилку
+        return false, err
+    }
+	fmt.Println("val", val)
+	fmt.Println("value", value)
+	fmt.Println("val == value", val == value)
+    // Перевірити співпадіння значення з вказаним value
+    return val == value, nil
+}
