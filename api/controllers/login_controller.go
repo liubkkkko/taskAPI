@@ -13,6 +13,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/models"
+	"github.com/liubkkkko/firstAPI/api/tokenstorage"
 	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -58,7 +59,7 @@ func (server *Server) SignIn(email, password string) (string, error) {
 	}
 	ctx := context.Background()
 	// save token in Redis temporary (24h)
-	err = server.redisClient.Set(ctx, token, author.ID, time.Hour*24).Err()
+	err = tokenstorage.RedisClient.Set(ctx, token, author.ID, time.Hour*24).Err()
 	if err != nil {
 		return "", err
 	}
@@ -71,12 +72,12 @@ func (server *Server) Logout(c echo.Context) error {
 	fmt.Println(token)
 	ctx := context.Background()
 	// delete token in Redis
-	err := server.redisClient.Del(ctx, token).Err()
+	err := tokenstorage.RedisClient.Del(ctx, token).Err()
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(server.checkKeyExists(token, server.redisClient))
+	fmt.Println(server.checkKeyExists(token, tokenstorage.RedisClient))
 
 	return nil
 }
