@@ -32,15 +32,11 @@ func TokenValid(c echo.Context) error {
 		return err
 	}
 	tokenIdString := strconv.Itoa(int(tokenId))
-	fmt.Println("tokenString", tokenString)
-	fmt.Println("tokenIdString", tokenIdString)
-
 	tokenExist, err := tokenstorage.CheckValueExists(tokenstorage.RedisClient, tokenIdString, tokenString)
 	if !tokenExist {
-		fmt.Println("I have err", tokenExist)
+		log.Fatal("Unautorised", err)
 		return err
 	}
-	fmt.Println("tokenExist", tokenExist)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])

@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"time"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/models"
@@ -41,6 +39,19 @@ func (server *Server) Login(c echo.Context) error {
 	return c.JSON(http.StatusOK, token)
 }
 
+func (server *Server) Logout(c echo.Context) error {
+	token := auth.ExtractToken(c)
+	fmt.Println(token)
+	ctx := context.Background()
+	// delete token in Redis
+	err := tokenstorage.RedisClient.Del(ctx, token).Err()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (server *Server) SignIn(email, password string) (string, error) {
 	author := models.Author{}
 
@@ -65,33 +76,4 @@ func (server *Server) SignIn(email, password string) (string, error) {
 	}
 
 	return token, nil
-}
-
-func (server *Server) Logout(c echo.Context) error {
-	token := auth.ExtractToken(c)
-	fmt.Println(token)
-	ctx := context.Background()
-	// delete token in Redis
-	err := tokenstorage.RedisClient.Del(ctx, token).Err()
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(server.checkKeyExists(token, tokenstorage.RedisClient))
-
-	return nil
-}
-
-func (server *Server) checkKeyExists(key string, client *redis.Client) bool {
-
-	ctx := context.Background()
-
-	// check if you have key in Redis
-	result, err := client.Exists(ctx, key).Result()
-	if err != nil {
-		log.Println(err)
-		return false
-	}
-	fmt.Println(result)
-	return true
 }

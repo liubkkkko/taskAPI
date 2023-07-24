@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,7 +17,7 @@ func Run() {
 	if err != nil {
 		log.Fatalf("Error getting env, not comming through %v", err)
 	} else {
-		fmt.Println("We are getting the env values")
+		log.Println("We are getting the env values")
 	}
 
 	server.Initialize(
