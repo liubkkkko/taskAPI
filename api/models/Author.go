@@ -17,7 +17,7 @@ type Author struct {
 	Nickname   string       `gorm:"column:nickname;size:255;not null;unique;" json:"nickname"`
 	Email      string       `gorm:"column:email;size:100;not null;unique;" json:"email"`
 	Password   string       `gorm:"column:password;size:100;not null;" json:"password"`
-	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feauture add interface to swich role
+	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feature add interface to switch role
 	Jobs       []Job        `gorm:"foreignKey:author_id"`
 	Workspaces []*Workspace `gorm:"many2many:author_workspace;"`
 	CreatedAt  time.Time    `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
@@ -105,7 +105,7 @@ func (a *Author) SaveAuthors(db *gorm.DB) (*Author, error) {
 }
 
 func (a *Author) FindAllAuthors(db *gorm.DB) (*[]Author, error) {
-	authors := []Author{}
+	var authors []Author
 	err := db.Debug().Preload("Workspaces").Preload("Jobs").Model(&Author{}).Limit(100).Find(&authors).Error
 	if err != nil {
 		return &[]Author{}, err
@@ -119,7 +119,6 @@ func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) error {
 		return err
 	}
 
-	// Preload Author Workspaces
 	err = db.Debug().Model(&Author{}).Where("id = ?", a.ID).Preload("Workspaces").Find(a).Error
 	if err != nil {
 		return err

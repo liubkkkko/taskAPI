@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 
 func (server *Server) CreateWorspace(c echo.Context) error {
 
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -49,7 +50,7 @@ func (server *Server) CreateWorspace(c echo.Context) error {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, workspaceCreated.ID))
+	c.Response().Header().Set("Location", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, workspaceCreated.ID))
 	return c.JSON(http.StatusCreated, workspaceCreated)
 }
 
@@ -166,8 +167,8 @@ func (server *Server) UpdateWorkspace(c echo.Context) error {
 	err = workspace.CheckIfYouAuthor(server.DB, uint64(aid))
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
-		}
-	
+	}
+
 	// Read the data posted
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {

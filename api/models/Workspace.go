@@ -55,7 +55,7 @@ func (w *Workspace) GetAllAuthorsId() []uint64 {
 }
 
 func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
-	
+
 	if w.ID == 0 {
 		authorIDs := make([]uint64, len(w.Authors)) // create array IDs authors
 		for i, author := range w.Authors {
@@ -67,26 +67,26 @@ func (w *Workspace) CheckIfYouAuthor(db *gorm.DB, aid uint64) error {
 			}
 		}
 		return echo.ErrUnauthorized
-	}else{
-	var workspace Workspace
-	if err := db.Preload("Authors").First(&workspace, w.ID).Error; err != nil {
-		return err
-	}
-	authorIDs := make([]uint64, len(workspace.Authors))
-	for i, author := range workspace.Authors {
-		authorIDs[i] = author.ID
-	}
-	for _, id := range authorIDs {
-		if id == aid {
-			return nil
+	} else {
+		var workspace Workspace
+		if err := db.Preload("Authors").First(&workspace, w.ID).Error; err != nil {
+			return err
 		}
+		authorIDs := make([]uint64, len(workspace.Authors))
+		for i, author := range workspace.Authors {
+			authorIDs[i] = author.ID
+		}
+		for _, id := range authorIDs {
+			if id == aid {
+				return nil
+			}
+		}
+		return echo.ErrUnauthorized
 	}
-	return echo.ErrUnauthorized
-}
 }
 
 func (w *Workspace) FindAllWorkspaces(db *gorm.DB) (*[]Workspace, error) {
-	workspaces := []Workspace{}
+	var workspaces []Workspace
 	err := db.Debug().Preload("Authors").Preload("Jobs").Limit(100).Find(&workspaces).Error
 	if err != nil {
 		return &[]Workspace{}, err
@@ -109,7 +109,7 @@ func (w *Workspace) AddAuthorToWorkspace(db *gorm.DB, aid uint32, wid uint32) (*
 		return nil, err
 	}
 	var existingWorkspace Workspace
-	if wid != 0 { 
+	if wid != 0 {
 		// find workspace by id
 		if err := db.Debug().First(&existingWorkspace, wid).Error; err != nil {
 			return nil, err

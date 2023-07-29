@@ -3,8 +3,9 @@ package controllers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 )
 
 func (server *Server) Login(c echo.Context) error {
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -60,7 +61,7 @@ func (server *Server) SignIn(email, password string) (string, error) {
 		return "", err
 	}
 	err = models.VerifyPassword(author.Password, password)
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+	if err != nil && errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return "bad login data", err
 	}
 

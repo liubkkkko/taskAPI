@@ -75,7 +75,7 @@ func Load(db *gorm.DB) {
 		log.Fatalf("failed to check jobs table: %v", err)
 	}
 
-	// If we dont have data - start to seed
+	// If we don't have data - start to seed
 	if authorsCount == 0 && workspacesCount == 0 && jobsCount == 0 {
 		for i := range authors {
 			err = db.Debug().Model(&models.Workspace{}).Create(&workspaces[i]).Error

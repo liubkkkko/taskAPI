@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -16,7 +17,7 @@ import (
 
 func (server *Server) CreateJob(c echo.Context) error {
 
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -44,7 +45,7 @@ func (server *Server) CreateJob(c echo.Context) error {
 		formattedError := formaterror.FormatError(err.Error())
 		return c.JSON(http.StatusInternalServerError, formattedError)
 	}
-	c.Response().Header().Set("Lacation", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, jobCreated.ID))
+	c.Response().Header().Set("Location", fmt.Sprintf("%s%s/%d", c.Request().Host, c.Request().URL.Path, jobCreated.ID))
 	return c.JSON(http.StatusCreated, jobCreated)
 }
 
@@ -156,7 +157,7 @@ func (server *Server) DeleteJob(c echo.Context) error {
 	}
 
 	// Is the authenticated user, the owner of this job?
-	if uid != uint32(job.AuthorID){
+	if uid != uint32(job.AuthorID) {
 		return c.JSON(http.StatusUnauthorized, errors.New("Unauthorized"))
 	}
 	_, err = job.DeleteAJob(server.DB, tid, uid)
