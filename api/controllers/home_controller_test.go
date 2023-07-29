@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/liubkkkko/firstAPI/api/controllers"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +17,7 @@ func TestHome(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Створюємо об'єкт сервера та викликаємо обробник Home
-	server := &controllers.Server{} 
+	server := &Server{} 
 	err := server.Home(c)
 
 	// Перевіряємо, чи немає помилки, і що відповідь містить очікуваний текст
@@ -35,7 +34,7 @@ func TestTestRout(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Створюємо об'єкт сервера та викликаємо обробник TestRout
-	server := &controllers.Server{}
+	server := &Server{}
 	err := server.TestRout(c)
 
 	// Перевіряємо, чи немає помилки, і що відповідь містить очікуваний текст
