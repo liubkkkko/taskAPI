@@ -124,3 +124,19 @@ func TestValidate(t *testing.T) {
 	assert.NotNil(t, err, "Expected validation to fail for unknown action with invalid Email")
 	assert.EqualError(t, err, "invalid Email", "Expected error message 'invalid Email'")
 }
+
+// func TestMain(m *testing.M) {
+// 	var err error
+// 	err = godotenv.Load(os.ExpandEnv("../../.env"))
+// 	if err != nil {
+// 		log.Fatalf("Error getting env %v\n", err)
+// 	}
+// 	Database()
+
+// 	os.Exit(m.Run())
+
+// }
+
+func TestSaveAuthors(t *testing.T) {
+
+}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 
@@ -101,7 +100,7 @@ func (server *Server) UpdateJob(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, errors.New("unauthorized"))
 	}
 	// Read the data posted
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
