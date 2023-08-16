@@ -4,37 +4,37 @@ import (
 	"github.com/liubkkkko/firstAPI/api/middlewares"
 )
 
-func (server *Server) initializeRoutes() {
+func (s *Server) initializeRoutes() {
 
 	// Home Route
-	server.Router.GET("/", server.Home)         // working
-	server.Router.GET("/test", server.TestRout) // working
+	s.Router.GET("/", s.Home)         // working
+	s.Router.GET("/test", s.TestRout) // working
 
 	// Login Route
-	server.Router.POST("/login", server.Login)                                            //working
-	server.Router.POST("/logout", server.Logout, middlewares.SetMiddlewareAuthentication) //working
+	s.Router.POST("/login", s.Login)                                            //working
+	s.Router.POST("/logout", s.Logout, middlewares.SetMiddlewareAuthentication) //working
 
 	//Author routes
-	server.Router.POST("/authors", server.CreateAuthor)                                                //working
-	server.Router.GET("/authors", server.GetAuthors)                                                   //working
-	server.Router.GET("/author/:id", server.GetAuthor)                                                 //working
-	server.Router.PUT("/authors/:id", server.UpdateAuthor, middlewares.SetMiddlewareAuthentication)    //working
-	server.Router.DELETE("/authors/:id", server.DeleteAuthor, middlewares.SetMiddlewareAuthentication) //working
+	s.Router.POST("/authors", s.CreateAuthor)                                                //working
+	s.Router.GET("/authors", s.GetAuthors)                                                   //working
+	s.Router.GET("/author/:id", s.GetAuthor)                                                 //working
+	s.Router.PUT("/authors/:id", s.UpdateAuthor, middlewares.SetMiddlewareAuthentication)    //working
+	s.Router.DELETE("/authors/:id", s.DeleteAuthor, middlewares.SetMiddlewareAuthentication) //working
 
 	//Workspace routes
-	server.Router.POST("/workspces", server.CreateWorspace, middlewares.SetMiddlewareAuthentication)                 //working
-	server.Router.GET("/workspaces", server.GetWorkspaces)                                                           //working
-	server.Router.GET("/workspace/:id", server.GetWorkspace)                                                         //working
-	server.Router.GET("/workspaces/authors/:id", server.GetWorkspacesByAuthorId)                                     //working
-	server.Router.PUT("/workspace/:id", server.AddOneMoreAuthorToWorkspace, middlewares.SetMiddlewareAuthentication) //working
-	server.Router.PUT("/workspaces/:id", server.UpdateWorkspace, middlewares.SetMiddlewareAuthentication)            //working
-	server.Router.DELETE("/workspaces/:id", server.DeleteWorkspace, middlewares.SetMiddlewareAuthentication)         //working (only if you try to delete own workspace)
-	server.Router.GET("/workspace", server.CheckIfIAuthor)                                                           //working
+	s.Router.POST("/workspces", s.CreateWorspace, middlewares.SetMiddlewareAuthentication)                 //working
+	s.Router.GET("/workspaces", s.GetWorkspaces)                                                           //working
+	s.Router.GET("/workspace/:id", s.GetWorkspace)                                                         //working
+	s.Router.GET("/workspaces/authors/:id", s.GetWorkspacesByAuthorId)                                     //working
+	s.Router.PUT("/workspace/:id", s.AddOneMoreAuthorToWorkspace, middlewares.SetMiddlewareAuthentication) //working
+	s.Router.PUT("/workspaces/:id", s.UpdateWorkspace, middlewares.SetMiddlewareAuthentication)            //working
+	s.Router.DELETE("/workspaces/:id", s.DeleteWorkspace, middlewares.SetMiddlewareAuthentication)         //working (only if you try to delete own workspace)
+	s.Router.GET("/workspace", s.CheckIfIAuthor)                                                           //working
 
 	//Job routes
-	server.Router.POST("/jobs", server.CreateJob, middlewares.SetMiddlewareAuthentication)      //working
-	server.Router.GET("/jobs", server.GetJobs)                                                  //working
-	server.Router.GET("/job/:id", server.GetJob)                                                //working
-	server.Router.PUT("/job/:id", server.UpdateJob, middlewares.SetMiddlewareAuthentication)    //working
-	server.Router.DELETE("/job/:id", server.DeleteJob, middlewares.SetMiddlewareAuthentication) //working
+	s.Router.POST("/jobs", s.CreateJob, middlewares.SetMiddlewareAuthentication)      //working
+	s.Router.GET("/jobs", s.GetJobs)                                                  //working
+	s.Router.GET("/job/:id", s.GetJob)                                                //working
+	s.Router.PUT("/job/:id", s.UpdateJob, middlewares.SetMiddlewareAuthentication)    //working
+	s.Router.DELETE("/job/:id", s.DeleteJob, middlewares.SetMiddlewareAuthentication) //working
 }
