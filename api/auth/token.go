@@ -15,10 +15,10 @@ import (
 	"github.com/liubkkkko/firstAPI/api/tokenstorage"
 )
 
-func CreateToken(user_id uint32) (string, error) {
+func CreateToken(userId uint32) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
-	claims["user_id"] = user_id
+	claims["user_id"] = userId
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() //Token expires after 24 hour
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
@@ -34,7 +34,7 @@ func TokenValid(c echo.Context) error {
 	tokenIdString := strconv.Itoa(int(tokenId))
 	tokenExist, err := tokenstorage.CheckValueExists(tokenstorage.RedisClient, tokenIdString, tokenString)
 	if !tokenExist {
-		log.Fatal("Unautorised", err)
+		log.Fatal("Unauthorized", err)
 		return err
 	}
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+
 	"github.com/liubkkkko/firstAPI/api/controllers"
 	"github.com/liubkkkko/firstAPI/api/seed"
 	"github.com/liubkkkko/firstAPI/api/tokenstorage"
@@ -35,6 +36,6 @@ func Run() {
 
 	seed.Load(server.DB)
 
-	server.Run(":8080")
-
+	 server.Run(":443")
+	// server.Run(os.Getenv(":APP_PORT"))
 }

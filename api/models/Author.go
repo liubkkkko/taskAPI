@@ -17,7 +17,7 @@ type Author struct {
 	Nickname   string       `gorm:"column:nickname;size:255;not null;unique;" json:"nickname"`
 	Email      string       `gorm:"column:email;size:100;not null;unique;" json:"email"`
 	Password   string       `gorm:"column:password;size:100;not null;" json:"password"`
-	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feauture add interface to swich role
+	Role       string       `gorm:"column:role;size:100;not null;default:'user'" json:"role"` //in the feature add interface to switch role
 	Jobs       []Job        `gorm:"foreignKey:author_id"`
 	Workspaces []*Workspace `gorm:"many2many:author_workspace;"`
 	CreatedAt  time.Time    `gorm:"default:CURRENT_TIMESTAMP" json:"created_at"`
@@ -105,7 +105,7 @@ func (a *Author) SaveAuthors(db *gorm.DB) (*Author, error) {
 }
 
 func (a *Author) FindAllAuthors(db *gorm.DB) (*[]Author, error) {
-	authors := []Author{}
+	var authors []Author
 	err := db.Debug().Preload("Workspaces").Preload("Jobs").Model(&Author{}).Limit(100).Find(&authors).Error
 	if err != nil {
 		return &[]Author{}, err
@@ -119,7 +119,6 @@ func (a *Author) FindAuthorByIDForWorkspace(db *gorm.DB, aid uint32) error {
 		return err
 	}
 
-	// Preload Author Workspaces
 	err = db.Debug().Model(&Author{}).Where("id = ?", a.ID).Preload("Workspaces").Find(a).Error
 	if err != nil {
 		return err
@@ -151,31 +150,32 @@ func (a *Author) FindAuthorsByEmail(db *gorm.DB, email string) (*Author, error) 
 }
 
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
-
-	// To hash the password
+	// Хешування пароля перед збереженням
 	err := a.BeforeSave(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db = db.Debug().Model(&Author{}).Where("id = ?", uid).Take(&Author{}).UpdateColumns(
-		map[string]interface{}{
-			"password":   a.Password,
-			"nickname":   a.Nickname,
-			"email":      a.Email,
-			"role":       a.Role,
-			"updated_at": time.Now(),
-		},
-	)
+
+	// Виконання оновлення
+	db = db.Debug().Model(&Author{}).Where("id = ?", uid).Updates(map[string]interface{}{
+		"password":   a.Password,
+		"nickname":   a.Nickname,
+		"email":      a.Email,
+		"role":       a.Role,
+		"updated_at": time.Now(),
+	})
 	if db.Error != nil {
 		return &Author{}, db.Error
 	}
-	// This is the display the updated user
+
+	// Отримання оновленого запису
 	err = db.Debug().Model(&Author{}).Where("id = ?", uid).Take(&a).Error
 	if err != nil {
 		return &Author{}, err
 	}
 	return a, nil
 }
+
 
 func (a *Author) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
 

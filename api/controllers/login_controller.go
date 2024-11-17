@@ -3,11 +3,11 @@ package controllers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"errors"
+	"io"
 	"net/http"
 	"time"
-
+	"strconv"
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/auth"
 	"github.com/liubkkkko/firstAPI/api/models"
@@ -17,7 +17,7 @@ import (
 )
 
 func (server *Server) Login(c echo.Context) error {
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, err)
 	}
@@ -41,14 +41,12 @@ func (server *Server) Login(c echo.Context) error {
 
 func (server *Server) Logout(c echo.Context) error {
 	token := auth.ExtractToken(c)
-	fmt.Println(token)
 	ctx := context.Background()
 	// delete token in Redis
 	err := tokenstorage.RedisClient.Del(ctx, token).Err()
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -60,7 +58,7 @@ func (server *Server) SignIn(email, password string) (string, error) {
 		return "", err
 	}
 	err = models.VerifyPassword(author.Password, password)
-	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+	if err != nil && errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 		return "bad login data", err
 	}
 
@@ -77,3 +75,28 @@ func (server *Server) SignIn(email, password string) (string, error) {
 
 	return token, nil
 }
+
+
+func (server *Server) IdIfYouHaveToken(c echo.Context) error {
+    token := auth.ExtractToken(c)
+    ctx := context.Background()
+
+    id, err := tokenstorage.RedisClient.Get(ctx, token).Result()
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "error": err.Error(),
+        })
+    }
+
+    Id, err := strconv.Atoi(id)
+    if err != nil || Id == 0 {
+        return c.JSON(http.StatusInternalServerError, map[string]interface{}{
+            "error": "Invalid ID",
+        })
+    }
+
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "id": Id,
+    })
+}
+
