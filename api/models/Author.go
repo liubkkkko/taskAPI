@@ -150,31 +150,32 @@ func (a *Author) FindAuthorsByEmail(db *gorm.DB, email string) (*Author, error) 
 }
 
 func (a *Author) UpdateAuthors(db *gorm.DB, uid uint32) (*Author, error) {
-
-	// To hash the password
+	// Хешування пароля перед збереженням
 	err := a.BeforeSave(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-	db = db.Debug().Model(&Author{}).Where("id = ?", uid).Take(&Author{}).UpdateColumns(
-		map[string]interface{}{
-			"password":   a.Password,
-			"nickname":   a.Nickname,
-			"email":      a.Email,
-			"role":       a.Role,
-			"updated_at": time.Now(),
-		},
-	)
+
+	// Виконання оновлення
+	db = db.Debug().Model(&Author{}).Where("id = ?", uid).Updates(map[string]interface{}{
+		"password":   a.Password,
+		"nickname":   a.Nickname,
+		"email":      a.Email,
+		"role":       a.Role,
+		"updated_at": time.Now(),
+	})
 	if db.Error != nil {
 		return &Author{}, db.Error
 	}
-	// This is the display the updated user
+
+	// Отримання оновленого запису
 	err = db.Debug().Model(&Author{}).Where("id = ?", uid).Take(&a).Error
 	if err != nil {
 		return &Author{}, err
 	}
 	return a, nil
 }
+
 
 func (a *Author) DeleteAUser(db *gorm.DB, uid uint32) (int64, error) {
 

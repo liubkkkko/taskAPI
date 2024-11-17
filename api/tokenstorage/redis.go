@@ -48,3 +48,13 @@ func CheckValueExists(client *redis.Client, key, value string) (bool, error) {
 	// check if the key and value are the same
 	return val == key, nil
 }
+
+func IdIfYouHaveToken(client *redis.Client, token string) (string, error) {
+	ctx := context.Background()
+
+	id, err := client.Get(ctx, token).Result()
+	if err != nil {
+		return "0", err
+	}
+	return id, nil
+}

@@ -1,4 +1,4 @@
-package api
+package tests
 
 import (
 	"github.com/joho/godotenv"
@@ -20,7 +20,7 @@ func TestRun(t *testing.T) {
 		log.Println("We are getting the env values")
 	}
 
-	server.Initialize(
+	testServer.Initialize(
 		os.Getenv("TEST_DB_DRIVER"),
 		os.Getenv("TEST_DB_USER"),
 		os.Getenv("TEST_DB_PASSWORD"),
@@ -33,9 +33,9 @@ func TestRun(t *testing.T) {
 		os.Getenv("REDIS_PASSWORD"),
 		os.Getenv("REDIS_DB"))
 
-	seed.Load(server.DB)
+	seed.Load(testServer.DB)
 
-	server.Run(":8080")
+	testServer.Run(":8080")
 
 }
 
