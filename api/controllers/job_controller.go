@@ -74,6 +74,24 @@ func (server *Server) GetJob(c echo.Context) error {
 	return c.JSON(http.StatusOK, taskReceived)
 }
 
+
+func (server *Server) GetJobsByWorkspaceId(c echo.Context) error {
+	wid, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+
+	workspace := models.Workspace{}
+
+	err = workspace.FindJobsByWorkspaceId(server.DB, uint32(wid))
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	jobs := workspace.Jobs
+	return c.JSON(http.StatusOK, jobs)
+}
+
 func (server *Server) UpdateJob(c echo.Context) error {
 
 	// Check if the job id is valid

@@ -154,3 +154,20 @@ func (w *Workspace) DeleteAWorkspace(db *gorm.DB, wid uint64, aid uint32) (int64
 	}
 	return db.RowsAffected, nil
 }
+
+func (w *Workspace) FindJobsByWorkspaceId(db *gorm.DB, wid uint32) error {
+	err := db.Debug().Model(&Workspace{}).Where("id = ?", wid).Take(&w).Error
+	if err != nil {
+		return err
+	}
+err = db.Debug().
+	Model(&Workspace{}).
+	Where("id = ?", w.ID).
+	Preload("Jobs").
+	Preload("Authors").
+	First(w).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
