@@ -13,26 +13,54 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/labstack/echo/v4"
 	"github.com/liubkkkko/firstAPI/api/tokenstorage"
+	"github.com/google/uuid"
 )
 
-func CreateToken(userId uint32) (string, error) {
+// Налаштування термінів життя
+const (
+	AccessTokenTTL  = time.Minute * 15
+	RefreshTokenTTL = time.Hour * 24 * 7
+)
+
+// CreateAccessToken — створює JWT для access (без jti)
+func CreateAccessToken(userId uint32) (string, error) {
 	claims := jwt.MapClaims{}
 	claims["authorized"] = true
 	claims["user_id"] = userId
-	claims["exp"] = time.Now().Add(time.Hour * 24).Unix() // Token expires after 24 hours
+	claims["exp"] = time.Now().Add(AccessTokenTTL).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
 }
 
-// TokenValid перевіряє JWT з cookie, валідує підпис і перевіряє Redis.
-// Якщо все гаразд — додає userID у echo.Context.
+// CreateRefreshToken — створює refresh токен з автоматичним jti
+func CreateRefreshToken(userId uint32) (string, string, error) {
+	jti := uuid.New().String()
+	return CreateRefreshTokenWithJTI(userId, jti)
+}
+
+// CreateRefreshTokenWithJTI — створює refresh токен з заданим jti
+func CreateRefreshTokenWithJTI(userId uint32, jti string) (string, string, error) {
+	claims := jwt.MapClaims{}
+	claims["user_id"] = userId
+	claims["type"] = "refresh"
+	claims["jti"] = jti
+	claims["exp"] = time.Now().Add(RefreshTokenTTL).Unix()
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(os.Getenv("API_SECRET")))
+	if err != nil {
+		return "", "", err
+	}
+	return signed, jti, nil
+}
+
+// TokenValid перевіряє JWT (access або refresh) — повертає помилку або nil.
+// Додає userID в контекст (c.Set("userID", userId)).
 func TokenValid(c echo.Context) error {
 	tokenString := ExtractToken(c)
 	if tokenString == "" {
 		return fmt.Errorf("token not found")
 	}
 
-	// Розбираємо і перевіряємо підпис токена
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
@@ -48,7 +76,7 @@ func TokenValid(c echo.Context) error {
 		return errors.New("invalid or expired token")
 	}
 
-	// Отримуємо user_id з claims
+	// Отримуємо user_id
 	var userId uint32
 	switch v := claims["user_id"].(type) {
 	case float64:
@@ -63,54 +91,43 @@ func TokenValid(c echo.Context) error {
 		return errors.New("user_id claim missing or invalid")
 	}
 
-	// Перевіряємо токен у Redis (для відкликання)
+	// Перевіряємо, чи цей токен існує в Redis (тобто не відкликаний)
 	tokenIdString := strconv.Itoa(int(userId))
-	tokenExist, err := tokenstorage.CheckValueExists(tokenstorage.RedisClient, tokenIdString, tokenString)
+	exists, err := tokenstorage.CheckValueExists(tokenstorage.RedisClient, tokenIdString, tokenString)
 	if err != nil {
 		return fmt.Errorf("redis check error: %v", err)
 	}
-	if !tokenExist {
-		log.Println("Unauthorized: token not found in Redis or revoked")
+	if !exists {
+		log.Println("Unauthorized: token not found or revoked")
 		return fmt.Errorf("unauthorized")
 	}
 
-	// Для зручності контролерів — кладемо userID у контекст
 	c.Set("userID", userId)
-
-	// (Не обов'язково, але залишимо для відладки)
 	Pretty(claims)
-
 	return nil
 }
 
-// ExtractToken — пробує дістати токен з cookie, потім з Authorization заголовку
+// ExtractToken — пробує дістати токен з cookie "refresh_token", потім з Authorization, потім query param
 func ExtractToken(c echo.Context) string {
-	// cookie
-	if cookie, err := c.Cookie("access_token"); err == nil && cookie.Value != "" {
+	if cookie, err := c.Cookie("refresh_token"); err == nil && cookie.Value != "" {
 		return cookie.Value
 	}
-
-	// header: Authorization: Bearer <token>
 	bearer := c.Request().Header.Get("Authorization")
 	if strings.HasPrefix(bearer, "Bearer ") {
 		return strings.TrimPrefix(bearer, "Bearer ")
 	}
-
-	// optional: query param ?token=
 	if t := c.QueryParam("token"); t != "" {
 		return t
 	}
-
 	return ""
 }
 
-// ExtractTokenID — допоміжна функція для отримання user_id з токена (якщо потрібно окремо)
+// ExtractTokenID — допоміжна функція для дістання user_id із токена
 func ExtractTokenID(c echo.Context) (uint32, error) {
 	tokenString := ExtractToken(c)
 	if tokenString == "" {
-		return 0, fmt.Errorf("token not found in cookies")
+		return 0, fmt.Errorf("token not found")
 	}
-
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
@@ -120,7 +137,6 @@ func ExtractTokenID(c echo.Context) (uint32, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		uid, err := strconv.ParseUint(fmt.Sprintf("%.0f", claims["user_id"]), 10, 32)
 		if err != nil {
@@ -128,11 +144,10 @@ func ExtractTokenID(c echo.Context) (uint32, error) {
 		}
 		return uint32(uid), nil
 	}
-
 	return 0, fmt.Errorf("invalid token claims")
 }
 
-// Pretty виводить claims у термінал (для відладки)
+// Pretty — debug для claims
 func Pretty(data interface{}) {
 	b, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
