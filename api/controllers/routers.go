@@ -24,7 +24,7 @@ func (server *Server) initializeRoutes() {
 	server.Router.DELETE("/authors/:id", server.DeleteAuthor, middlewares.SetMiddlewareAuthentication)
 
 	// Workspace routes (більшість доступні тільки з авторизацією)
-	server.Router.POST("/workspces", server.CreateWorspace, middlewares.SetMiddlewareAuthentication)
+	server.Router.POST("/workspaces", server.CreateWorkspace, middlewares.SetMiddlewareAuthentication)
 	server.Router.GET("/workspaces", server.GetWorkspaces, middlewares.SetMiddlewareAuthentication)
 	server.Router.GET("/workspace/:id", server.GetWorkspace, middlewares.SetMiddlewareAuthentication)
 	server.Router.GET("/workspaces/authors/:id", server.GetWorkspacesByAuthorId, middlewares.SetMiddlewareAuthentication)

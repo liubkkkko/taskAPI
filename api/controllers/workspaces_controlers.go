@@ -15,7 +15,7 @@ import (
 	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
 )
 
-func (server *Server) CreateWorspace(c echo.Context) error {
+func (server *Server) CreateWorkspace(c echo.Context) error {
 
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {

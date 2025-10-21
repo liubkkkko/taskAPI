@@ -1,222 +1,307 @@
 package controllers
 
 import (
-	"context"
-	"encoding/json"
-	"io"
-	"net/http"
-	"strconv"
-	"time"
+    "context"
+    "encoding/json"
+    "io"
+    "net/http"
+    "strconv"
+    "time"
 
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
-	"github.com/liubkkkko/firstAPI/api/auth"
-	"github.com/liubkkkko/firstAPI/api/models"
-	"github.com/liubkkkko/firstAPI/api/tokenstorage"
-	"github.com/liubkkkko/firstAPI/api/utils/formaterror"
+    "github.com/google/uuid"
+    "github.com/labstack/echo/v4"
+    "github.com/liubkkkko/firstAPI/api/auth"
+    "github.com/liubkkkko/firstAPI/api/models"
+    "github.com/liubkkkko/firstAPI/api/tokenstorage"
+    "github.com/liubkkkko/firstAPI/api/utils/formaterror"
 )
 
 // 🔹 LOGIN
 func (server *Server) Login(c echo.Context) error {
-	body, err := io.ReadAll(c.Request().Body)
-	if err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
+    body, err := io.ReadAll(c.Request().Body)
+    if err != nil {
+        return c.JSON(http.StatusUnprocessableEntity, err)
+    }
 
-	var authorReq models.Author
-	if err := json.Unmarshal(body, &authorReq); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
+    var authorReq models.Author
+    if err := json.Unmarshal(body, &authorReq); err != nil {
+        return c.JSON(http.StatusUnprocessableEntity, err)
+    }
 
-	authorReq.Prepare()
-	if err := authorReq.Validate("login"); err != nil {
-		return c.JSON(http.StatusUnprocessableEntity, err)
-	}
+    authorReq.Prepare()
+    if err := authorReq.Validate("login"); err != nil {
+        return c.JSON(http.StatusUnprocessableEntity, err)
+    }
 
-	// ✅ Авторизація користувача
-	author, accessToken, refreshToken, err := server.SignIn(authorReq.Email, authorReq.Password)
-	if err != nil {
-		formattedError := formaterror.FormatError(err.Error())
-		return c.JSON(http.StatusUnauthorized, formattedError)
-	}
+    // ✅ Авторизація користувача
+    author, accessToken, refreshToken, jti, err := server.SignIn(authorReq.Email, authorReq.Password)
+    if err != nil {
+        formattedError := formaterror.FormatError(err.Error())
+        return c.JSON(http.StatusUnauthorized, formattedError)
+    }
 
-	// ✅ Встановлюємо access token cookie
-	accessCookie := &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
-		Expires:  time.Now().Add(auth.AccessTokenTTL),
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		SameSite: http.SameSiteNoneMode,
-	}
-	c.SetCookie(accessCookie)
+    // ✅ Встановлюємо access token cookie
+    accessCookie := &http.Cookie{
+        Name:     "access_token",
+        Value:    accessToken,
+        Expires:  time.Now().Add(auth.AccessTokenTTL),
+        HttpOnly: true,
+        Secure:   true,
+        Path:     "/",
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(accessCookie)
 
-	// ✅ Встановлюємо refresh token cookie
-	refreshCookie := &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  time.Now().Add(auth.RefreshTokenTTL),
-		HttpOnly: true,
-		Secure:   true,
-		Path:     "/",
-		SameSite: http.SameSiteNoneMode,
-	}
-	c.SetCookie(refreshCookie)
+    // ✅ Встановлюємо refresh token cookie
+    refreshCookie := &http.Cookie{
+        Name:     "refresh_token",
+        Value:    refreshToken,
+        Expires:  time.Now().Add(auth.RefreshTokenTTL),
+        HttpOnly: true,
+        Secure:   true,
+        Path:     "/",
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(refreshCookie)
 
-	// ✅ Очищаємо пароль
-	author.Password = ""
+    // ✅ Зберігаємо метадані сесії в Redis (ключ = refresh:{jti})
+    meta := tokenstorage.SessionMeta{
+        UserID:    int(author.ID),
+        IP:        c.RealIP(),
+        UserAgent: c.Request().Header.Get("User-Agent"),
+        CreatedAt: time.Now().Unix(),
+        Signed:    refreshToken, // опціонально для дебагу; можна не зберігати в продакшні
+    }
+    _ = tokenstorage.SaveSession(tokenstorage.RedisClient, jti, meta, auth.RefreshTokenTTL)
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user": author,
-	})
+    // ✅ Очищаємо пароль
+    author.Password = ""
+
+    return c.JSON(http.StatusOK, map[string]interface{}{
+        "user": author,
+    })
 }
 
 // 🔹 REFRESH (rotation)
+// ...existing code...
+// 🔹 REFRESH (rotation)
 func (server *Server) Refresh(c echo.Context) error {
-	refreshToken := auth.ExtractToken(c)
-	if refreshToken == "" {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing refresh token"})
-	}
+    refreshToken := auth.ExtractToken(c)
+    if refreshToken == "" {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing refresh token"})
+    }
 
-	ctx := context.Background()
-	userIdStr, err := tokenstorage.RedisClient.Get(ctx, refreshToken).Result()
-	if err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid or expired refresh token"})
-	}
+    // спочатку пробуємо витягти jti із токена
+    oldJTI, err := auth.ExtractJTIFromString(refreshToken)
+    ctx := context.Background()
+    var uid int
+    var meta tokenstorage.SessionMeta
+    if err == nil && oldJTI != "" {
+        // новий підхід: jti -> session
+        sMeta, err2 := tokenstorage.GetSession(tokenstorage.RedisClient, oldJTI)
+        if err2 == nil {
+            meta = sMeta
+            uid = sMeta.UserID
+        }
+    }
 
-	uid, err := strconv.Atoi(userIdStr)
-	if err != nil || uid == 0 {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid refresh mapping"})
-	}
+    // backward-compat: якщо не знайшли по jti, пробуємо стару схему (ключ = signed token)
+    if uid == 0 {
+        userIdStr, err := tokenstorage.RedisClient.Get(ctx, refreshToken).Result()
+        if err != nil {
+            return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid or expired refresh token"})
+        }
+        uid64, err := strconv.Atoi(userIdStr)
+        if err != nil || uid64 == 0 {
+            return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid refresh mapping"})
+        }
+        uid = uid64
+        // build minimal meta
+        meta = tokenstorage.SessionMeta{
+            UserID:    uid,
+            CreatedAt: time.Now().Unix(),
+            Signed:    refreshToken,
+        }
+    }
 
-	newAccess, err := auth.CreateAccessToken(uint32(uid))
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't create access token"})
-	}
+    // створюємо новий access token
+    newAccess, err := auth.CreateAccessToken(uint32(uid))
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't create access token"})
+    }
 
-	// створюємо новий jti і новий refresh (rotation)
-	newJTI := uuid.New().String()
-	newRefreshSigned, _, err := auth.CreateRefreshTokenWithJTI(uint32(uid), newJTI)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't create refresh token"})
-	}
-	// returnedJTI == newJTI (можна ігнорувати або перевіряти)
+    // створюємо новий jti і новий refresh (rotation)
+    newJTI := uuid.New().String()
+    newRefreshSigned, _, err := auth.CreateRefreshTokenWithJTI(uint32(uid), newJTI)
+    if err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't create refresh token"})
+    }
 
-	// зберігаємо новий refresh у Redis
-	if err := tokenstorage.RedisClient.Set(ctx, newRefreshSigned, uid, auth.RefreshTokenTTL).Err(); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't save new refresh token"})
-	}
+    // зберігаємо нову сесію
+    newMeta := tokenstorage.SessionMeta{
+        UserID:    uid,
+        IP:        meta.IP,
+        UserAgent: meta.UserAgent,
+        CreatedAt: time.Now().Unix(),
+        Signed:    newRefreshSigned,
+    }
+    if err := tokenstorage.SaveSession(tokenstorage.RedisClient, newJTI, newMeta, auth.RefreshTokenTTL); err != nil {
+        return c.JSON(http.StatusInternalServerError, map[string]string{"error": "can't save new refresh token"})
+    }
 
-	// видаляємо старий refresh токен
-	_ = tokenstorage.RedisClient.Del(ctx, refreshToken).Err()
+    // видаляємо стару сесію (за oldJTI якщо є) та старий signed-key (для backward-compat)
+    if oldJTI != "" {
+        _ = tokenstorage.DeleteSession(tokenstorage.RedisClient, oldJTI)
+    }
+    _ = tokenstorage.RedisClient.Del(ctx, refreshToken).Err()
 
-	// встановлюємо новий refresh cookie
-	cookie := new(http.Cookie)
-	cookie.Name = "refresh_token"
-	cookie.Value = newRefreshSigned
-	cookie.Expires = time.Now().Add(auth.RefreshTokenTTL)
-	cookie.HttpOnly = true
-	cookie.Secure = true
-	cookie.Path = "/"
-	cookie.SameSite = http.SameSiteNoneMode
-	c.SetCookie(cookie)
+    // встановлюємо новий refresh cookie
+    refreshCookie := &http.Cookie{
+        Name:     "refresh_token",
+        Value:    newRefreshSigned,
+        Expires:  time.Now().Add(auth.RefreshTokenTTL),
+        HttpOnly: true,
+        Secure:   true,
+        Path:     "/",
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(refreshCookie)
 
-	return c.JSON(http.StatusOK, map[string]string{"access_token": newAccess})
+    // встановлюємо також новий access cookie (щоб клієнтський flow з credentials: 'include' працював автоматично)
+    accessCookie := &http.Cookie{
+        Name:     "access_token",
+        Value:    newAccess,
+        Expires:  time.Now().Add(auth.AccessTokenTTL),
+        HttpOnly: true,
+        Secure:   true,
+        Path:     "/",
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(accessCookie)
+
+    // Повертаємо також access_token у тілі для backward-compat / SPA, якщо потрібно
+    return c.JSON(http.StatusOK, map[string]string{"access_token": newAccess})
 }
 
-// 🔹 LOGOUT (очищує лише refresh токен для цієї сесії)
+// ...existing code...
 func (server *Server) Logout(c echo.Context) error {
-	refreshToken := auth.ExtractToken(c)
-	ctx := context.Background()
+    ctx := context.Background()
 
-	if refreshToken != "" {
-		_ = tokenstorage.RedisClient.Del(ctx, refreshToken).Err()
-	}
+    // Видаляємо сесію за refresh token (jti або signed token)
+    refreshToken := auth.ExtractToken(c)
+    if refreshToken != "" {
+        if jti, err := auth.ExtractJTIFromString(refreshToken); err == nil && jti != "" {
+            _ = tokenstorage.DeleteSession(tokenstorage.RedisClient, jti)
+        } else {
+            _ = tokenstorage.RedisClient.Del(ctx, refreshToken).Err()
+        }
+    }
 
-	expired := new(http.Cookie)
-	expired.Name = "refresh_token"
-	expired.Value = ""
-	expired.Expires = time.Unix(0, 0)
-	expired.Path = "/"
-	expired.HttpOnly = true
-	expired.Secure = true
-	expired.SameSite = http.SameSiteNoneMode
-	c.SetCookie(expired)
+    // Очистити access_token cookie
+    clearAccess := &http.Cookie{
+        Name:     "access_token",
+        Value:    "",
+        Path:     "/",
+        HttpOnly: true,
+        Secure:   true,
+        Expires:  time.Unix(0, 0),
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(clearAccess)
 
-	return c.JSON(http.StatusOK, map[string]string{"message": "logged out successfully"})
+    // Очистити refresh_token cookie
+    clearRefresh := &http.Cookie{
+        Name:     "refresh_token",
+        Value:    "",
+        Path:     "/",
+        HttpOnly: true,
+        Secure:   true,
+        Expires:  time.Unix(0, 0),
+        SameSite: http.SameSiteNoneMode,
+    }
+    c.SetCookie(clearRefresh)
+
+    return c.JSON(http.StatusOK, map[string]string{"message": "logged out successfully"})
 }
 
 // 🔹 SIGN-IN логіка (перевірка користувача, створення токенів)
-func (server *Server) SignIn(email, password string) (models.Author, string, string, error) {
-	var author models.Author
-	err := server.DB.Debug().Model(models.Author{}).Where("email = ?", email).Take(&author).Error
-	if err != nil {
-		return author, "", "", err
-	}
+// Тепер SignIn повертає також jti для подальшого збереження сесії у контролері Login
+func (server *Server) SignIn(email, password string) (models.Author, string, string, string, error) {
+    var author models.Author
+    err := server.DB.Debug().Model(models.Author{}).Where("email = ?", email).Take(&author).Error
+    if err != nil {
+        return author, "", "", "", err
+    }
 
-	if err := models.VerifyPassword(author.Password, password); err != nil {
-		return author, "", "", err
-	}
+    if err := models.VerifyPassword(author.Password, password); err != nil {
+        return author, "", "", "", err
+    }
 
-	ctx := context.Background()
+    // ✅ Створюємо access token
+    accessToken, err := auth.CreateAccessToken(uint32(author.ID))
+    if err != nil {
+        return author, "", "", "", err
+    }
 
-	// === ЗАЛИШАЮ ТУТ ПРОСТУ ЛОГІКУ: дозволяємо multi-device (не блокуємо наявні refresh) ===
-	// Якщо хочеш — можемо ввести обмеження на кількість сесій або логіку видалення старих сесій.
+    // ✅ створюємо refresh токен з унікальним jti
+    jti := uuid.New().String()
+    refreshSigned, returnedJTI, err := auth.CreateRefreshTokenWithJTI(uint32(author.ID), jti)
+    if err != nil {
+        return author, "", "", "", err
+    }
+    _ = returnedJTI // повертаємо jti нижче
 
-	// ✅ Створюємо access token
-	accessToken, err := auth.CreateAccessToken(uint32(author.ID))
-	if err != nil {
-		return author, "", "", err
-	}
-
-	// ✅ створюємо refresh токен з унікальним jti
-	jti := uuid.New().String()
-	refreshSigned, returnedJTI, err := auth.CreateRefreshTokenWithJTI(uint32(author.ID), jti)
-	if err != nil {
-		return author, "", "", err
-	}
-	_ = returnedJTI // поки що не використовуємо окремо
-
-	// ✅ Зберігаємо refresh токен у Redis (key = signedToken -> userID)
-	if err := tokenstorage.RedisClient.Set(ctx, refreshSigned, author.ID, auth.RefreshTokenTTL).Err(); err != nil {
-		return author, "", "", err
-	}
-
-	return author, accessToken, refreshSigned, nil
+    // НЕ зберігаємо signed refresh як ключ у Redis тут (ми зберігаємо session за jti у контролері Login)
+    return author, accessToken, refreshSigned, jti, nil
 }
 
 // 🔹 Отримати користувача за токеном
 func (server *Server) IdIfYouHaveToken(c echo.Context) error {
-	token := auth.ExtractToken(c)
-	if token == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing token"})
-	}
+    // Перш за все — намагаємось дістати user id з access token (в cookie або Authorization header)
+    if uid, err := auth.ExtractTokenID(c); err == nil && uid != 0 {
+        author := models.Author{}
+        userGotten, err := author.FindAuthorsByID(server.DB, uid)
+        if err != nil {
+            return c.JSON(http.StatusBadRequest, err)
+        }
+        return c.JSON(http.StatusOK, userGotten)
+    }
 
-	ctx := context.Background()
-	id, err := tokenstorage.RedisClient.Get(ctx, token).Result()
-	if err != nil {
-		if uid, err2 := auth.ExtractTokenID(c); err2 == nil && uid != 0 {
-			author := models.Author{}
-			userGotten, err := author.FindAuthorsByID(server.DB, uint32(uid))
-			if err != nil {
-				return c.JSON(http.StatusBadRequest, err)
-			}
-			return c.JSON(http.StatusOK, userGotten)
-		}
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid or expired token"})
-	}
+    // Fallback: якщо access token відсутній/невалідний — перевіримо refresh cookie jti -> user
+    refreshToken := auth.ExtractToken(c)
+    if refreshToken == "" {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing token"})
+    }
 
-	Id, err := strconv.Atoi(id)
-	if err != nil || Id == 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid ID"})
-	}
+    // спробуємо витягти jti
+    if jti, err := auth.ExtractJTIFromString(refreshToken); err == nil && jti != "" {
+        if meta, err := tokenstorage.GetSession(tokenstorage.RedisClient, jti); err == nil {
+            author := models.Author{}
+            userGotten, err := author.FindAuthorsByID(server.DB, uint32(meta.UserID))
+            if err != nil {
+                return c.JSON(http.StatusBadRequest, err)
+            }
+            return c.JSON(http.StatusOK, userGotten)
+        }
+    }
 
-	author := models.Author{}
-	userGotten, err := author.FindAuthorsByID(server.DB, uint32(Id))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
+    // backward-compat: перевіримо стару схему signedToken -> userID
+    ctx := context.Background()
+    id, err := tokenstorage.RedisClient.Get(ctx, refreshToken).Result()
+    if err != nil {
+        return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid or expired token"})
+    }
 
-	return c.JSON(http.StatusOK, userGotten)
+    Id, err := strconv.Atoi(id)
+    if err != nil || Id == 0 {
+        return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid ID"})
+    }
+
+    author := models.Author{}
+    userGotten, err := author.FindAuthorsByID(server.DB, uint32(Id))
+    if err != nil {
+        return c.JSON(http.StatusBadRequest, err)
+    }
+
+    return c.JSON(http.StatusOK, userGotten)
 }
