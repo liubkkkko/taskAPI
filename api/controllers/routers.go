@@ -6,10 +6,13 @@ import (
 
 func (server *Server) initializeRoutes() {
 
+    // Healthcheck (no auth)
+    server.Router.GET("/health", server.Health)
+
 	// Home Route
 	server.Router.GET("/", server.Home)
 	server.Router.GET("/test", server.TestRout)
-	server.Router.GET("/author", server.IdIfYouHaveToken)
+	server.Router.GET("/author", server.IdIfYouHaveToken, middlewares.SetMiddlewareAuthentication)
 
 	// Login/Refresh/Logout
 	server.Router.POST("/login", server.Login)
@@ -40,4 +43,9 @@ func (server *Server) initializeRoutes() {
 	server.Router.GET("/jobs/:id", server.GetJobsByWorkspaceId, middlewares.SetMiddlewareAuthentication)
 	server.Router.PUT("/job/:id", server.UpdateJob, middlewares.SetMiddlewareAuthentication)
 	server.Router.DELETE("/job/:id", server.DeleteJob, middlewares.SetMiddlewareAuthentication)
+
+	// ...existing code...
+    server.Router.GET("/auth/google", server.GoogleAuthRedirect)
+    server.Router.GET("/auth/google/callback", server.GoogleAuthCallback)
+
 }

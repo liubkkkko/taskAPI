@@ -46,9 +46,9 @@ func (server *Server) Login(c echo.Context) error {
         Value:    accessToken,
         Expires:  time.Now().Add(auth.AccessTokenTTL),
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Path:     "/",
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(accessCookie)
 
@@ -58,9 +58,9 @@ func (server *Server) Login(c echo.Context) error {
         Value:    refreshToken,
         Expires:  time.Now().Add(auth.RefreshTokenTTL),
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Path:     "/",
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(refreshCookie)
 
@@ -161,9 +161,9 @@ func (server *Server) Refresh(c echo.Context) error {
         Value:    newRefreshSigned,
         Expires:  time.Now().Add(auth.RefreshTokenTTL),
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Path:     "/",
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(refreshCookie)
 
@@ -173,9 +173,9 @@ func (server *Server) Refresh(c echo.Context) error {
         Value:    newAccess,
         Expires:  time.Now().Add(auth.AccessTokenTTL),
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Path:     "/",
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(accessCookie)
 
@@ -203,9 +203,9 @@ func (server *Server) Logout(c echo.Context) error {
         Value:    "",
         Path:     "/",
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Expires:  time.Unix(0, 0),
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(clearAccess)
 
@@ -215,9 +215,9 @@ func (server *Server) Logout(c echo.Context) error {
         Value:    "",
         Path:     "/",
         HttpOnly: true,
-        Secure:   true,
+        Secure:   false,
         Expires:  time.Unix(0, 0),
-        SameSite: http.SameSiteNoneMode,
+        SameSite: http.SameSiteLaxMode,
     }
     c.SetCookie(clearRefresh)
 

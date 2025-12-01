@@ -1,41 +1,47 @@
 package api
 
 import (
-	"log"
-	"os"
+    "fmt"
+    "log"
+    "os"
 
-	"github.com/joho/godotenv"
+    "github.com/joho/godotenv"
 
-	"github.com/liubkkkko/firstAPI/api/controllers"
-	"github.com/liubkkkko/firstAPI/api/seed"
-	"github.com/liubkkkko/firstAPI/api/tokenstorage"
+    "github.com/liubkkkko/firstAPI/api/controllers"
+    "github.com/liubkkkko/firstAPI/api/seed"
+    "github.com/liubkkkko/firstAPI/api/tokenstorage"
 )
 
 var server = controllers.Server{}
 
 func Run() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error getting env, not comming through %v", err)
-	} else {
-		log.Println("We are getting the env values")
-	}
+    err := godotenv.Load()
+    if err != nil {
+        log.Fatalf("Error getting env, not comming through %v", err)
+    } else {
+        log.Println("We are getting the env values")
+    }
 
-	server.Initialize(
-		os.Getenv("DB_DRIVER"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_NAME"))
+    server.Initialize(
+        os.Getenv("DB_DRIVER"),
+        os.Getenv("DB_USER"),
+        os.Getenv("DB_PASSWORD"),
+        os.Getenv("DB_PORT"),
+        os.Getenv("DB_HOST"),
+        os.Getenv("DB_NAME"))
 
-	tokenstorage.RedisStart(
-		os.Getenv("REDIS_ADDR"),
-		os.Getenv("REDIS_PASSWORD"),
-		os.Getenv("REDIS_DB"))
+    tokenstorage.RedisStart(
+        os.Getenv("REDIS_ADDR"),
+        os.Getenv("REDIS_PASSWORD"),
+        os.Getenv("REDIS_DB"))
 
-	seed.Load(server.DB)
+    seed.Load(server.DB)
 
-	 server.Run(":443")
-	// server.Run(os.Getenv(":APP_PORT"))
+    // Формуємо адресу: 0.0.0.0 + APP_PORT з .env
+    port := os.Getenv("APP_PORT")
+    if port == "" {
+        port = "8080" // default
+    }
+    addr := fmt.Sprintf("0.0.0.0:%s", port)
+    server.Run(addr)
 }

@@ -58,6 +58,7 @@ func CreateRefreshTokenWithJTI(userId uint32, jti string) (string, string, error
 func TokenValid(c echo.Context) error {
     tokenString := ExtractToken(c)
     if tokenString == "" {
+        log.Println("DEBUG: TokenValid - token not found")
         return fmt.Errorf("token not found")
     }
 
@@ -68,11 +69,13 @@ func TokenValid(c echo.Context) error {
         return []byte(os.Getenv("API_SECRET")), nil
     })
     if err != nil {
+        log.Println("DEBUG: TokenValid - parse error:", err)
         return fmt.Errorf("invalid token: %v", err)
     }
 
     claims, ok := token.Claims.(jwt.MapClaims)
     if !ok || !token.Valid {
+        log.Println("DEBUG: TokenValid - invalid claims or token")
         return errors.New("invalid or expired token")
     }
 
@@ -84,10 +87,12 @@ func TokenValid(c echo.Context) error {
     case string:
         parsed, err := strconv.ParseUint(v, 10, 32)
         if err != nil {
+            log.Println("DEBUG: TokenValid - invalid user_id parse")
             return errors.New("invalid user_id claim")
         }
         userId = uint32(parsed)
     default:
+        log.Println("DEBUG: TokenValid - user_id missing")
         return errors.New("user_id claim missing or invalid")
     }
 
@@ -95,17 +100,21 @@ func TokenValid(c echo.Context) error {
     if ttype, ok := claims["type"].(string); ok && ttype == "refresh" {
         jtiRaw, ok := claims["jti"]
         if !ok {
+            log.Println("DEBUG: TokenValid - refresh token missing jti")
             return errors.New("refresh token missing jti")
         }
         jti, ok := jtiRaw.(string)
         if !ok {
+            log.Println("DEBUG: TokenValid - invalid jti claim")
             return errors.New("invalid jti claim")
         }
         okExists, err := tokenstorage.SessionExists(tokenstorage.RedisClient, jti)
         if err != nil {
+             log.Println("DEBUG: TokenValid - redis check error:", err)
             return fmt.Errorf("redis check error: %v", err)
         }
         if !okExists {
+            log.Println("DEBUG: TokenValid - refresh session not found in redis for jti:", jti)
             log.Println("Unauthorized: refresh session not found")
             return fmt.Errorf("unauthorized")
         }
