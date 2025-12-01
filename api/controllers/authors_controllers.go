@@ -53,11 +53,13 @@ func (server *Server) GetAuthors(c echo.Context) error {
 func (server *Server) GetAuthor(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		fmt.Println("DEBUG: GetAuthor - parse id error:", err)
 		return c.JSON(http.StatusNoContent, err)
 	}
 	author := models.Author{}
 	userGotten, err := author.FindAuthorsByID(server.DB, uint32(id))
 	if err != nil {
+		fmt.Println("DEBUG: GetAuthor - FindAuthorsByID error:", err)
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusOK, userGotten)

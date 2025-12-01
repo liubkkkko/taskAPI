@@ -1,38 +1,83 @@
-version: '3'
+version: '3.8'
+
 services:
-  app:
-    container_name: full_app
-    build: .
-    ports: 
-      - 443:443 
-    restart: on-failure
-    volumes:
-      - api:/usr/src/app/
-      - ./cert.pem:/app/localhost.pem
-      - ./key.pem:/app/localhost-key.pem
-
-    depends_on:
-      - fullstack-postgres    
-      - redis   
-    networks:
-      - fullstack
-
-
   fullstack-postgres:
     image: postgres:latest
     container_name: full_db_postgres
     environment:
-      - POSTGRES_USER=${DB_USER}  
+      - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-      - DATABASE_HOST=${DB_HOST} 
+      - DATABASE_HOST=${DB_HOST}
     ports:
       - '5432:5432'
     volumes:
-      - database_postgres:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
     networks:
       - fullstack
-    
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis_container
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}   # головна зміна
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fullstack
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      fullstack-postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DB_HOST=fullstack-postgres
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_DB=${REDIS_DB}
+      - APP_PORT=8080
+    networks:
+      - fullstack
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../taskAPI_front
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - fullstack
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin_container
@@ -46,26 +91,11 @@ services:
     networks:
       - fullstack
     restart: unless-stopped
-  
-  redis:
-    image: redis:latest
-    container_name: redis_container
-    environment:
-      - REDIS_ADDR=${REDIS_ADDR}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_DB=${REDIS_DB}
-    networks:
-      - fullstack
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
 
 volumes:
-  api:
-  database_postgres:    
-  redis_data:              
+  db_data:
+  redis_data:
 
-# Networks to be created to facilitate communication between containers
 networks:
   fullstack:
     driver: bridge
