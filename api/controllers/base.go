@@ -16,7 +16,9 @@ import (
 type Server struct {
     DB     *gorm.DB
     Router *echo.Echo
+    Logger *zap.Logger
 }
+
 
 func (server *Server) Initialize(DbDriver, DbUser, DbPassword, DbPort, DbHost, DbName string) {
     var err error
@@ -38,18 +40,26 @@ func (server *Server) Initialize(DbDriver, DbUser, DbPassword, DbPort, DbHost, D
         AllowCredentials: true,
     }))
 
-    logger, _ := zap.NewProduction()
-    server.Router.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+logger, err := zap.NewProduction()
+if err != nil {
+    log.Fatal(err)
+}
+server.Logger = logger
+
+server.Router.Use(middleware.RequestLoggerWithConfig(
+    middleware.RequestLoggerConfig{
         LogURI:    true,
         LogStatus: true,
         LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-            logger.Info("request",
-                zap.String("URI", v.URI),
+            server.Logger.Info("request",
+                zap.String("uri", v.URI),
                 zap.Int("status", v.Status),
             )
             return nil
         },
-    }))
+    },
+))
+
 
     server.initializeRoutes()
 }

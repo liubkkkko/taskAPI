@@ -1,21 +1,23 @@
 package controllers
 
 import (
-    "context"
-    "encoding/json"
+	"context"
+	"encoding/json"
 
-    "net/http"
-    "time"
+	"net/http"
+	"time"
 
-    "github.com/labstack/echo/v4"
-    "golang.org/x/oauth2"
-    "golang.org/x/oauth2/google"
+	"github.com/labstack/echo/v4"
+	"go.uber.org/zap"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
-    "github.com/liubkkkko/firstAPI/api/auth"
-    "github.com/liubkkkko/firstAPI/api/models"
-    "github.com/liubkkkko/firstAPI/api/tokenstorage"
-    "github.com/google/uuid"
-    "os"
+	"os"
+
+	"github.com/google/uuid"
+	"github.com/liubkkkko/firstAPI/api/auth"
+	"github.com/liubkkkko/firstAPI/api/models"
+	"github.com/liubkkkko/firstAPI/api/tokenstorage"
 )
 
 // getOAuthConfig будує конфіг для google oauth2 з env
@@ -112,9 +114,16 @@ func (server *Server) GoogleAuthCallback(c echo.Context) error {
         CreatedAt: time.Now().Unix(),
         Signed:    refreshSigned,
     }
-    if err := tokenstorage.SaveSession(tokenstorage.RedisClient, jti, meta, auth.RefreshTokenTTL); err != nil {
-        // не критично — лог і продовжуємо
-    }
+    
+if err := tokenstorage.SaveSession(tokenstorage.RedisClient, jti, meta, auth.RefreshTokenTTL); err != nil {
+    server.Logger.Warn(
+        "failed to save oauth session",
+        zap.Error(err),
+        zap.String("jti", jti),
+        zap.Int("user_id", int(author.ID)),
+    )
+}
+
 
     // ставимо cookie як у Login
     accessCookie := &http.Cookie{
