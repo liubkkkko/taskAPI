@@ -28,9 +28,8 @@ jobs:
         uses: golangci/golangci-lint-action@v4
         with:
           version: v1.64.4
-          args: run ./... --enable-only=staticcheck --timeout 5m
-
-
+          args: ./... --enable-only=staticcheck
+          
       - name: Run tests
         run: go test ./... -v
 
